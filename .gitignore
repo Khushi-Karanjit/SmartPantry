@@ -1,0 +1,95 @@
+##################################
+# ENVIRONMENT VARIABLES (CRITICAL)
+##################################
+.env
+.env.*
+!.env.example
+
+##################################
+# DEPENDENCIES
+##################################
+node_modules/
+bower_components/
+
+##################################
+# BUILD OUTPUTS
+##################################
+dist/
+build/
+out/
+.vite/
+.cache/
+
+##################################
+# LOGS
+##################################
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+##################################
+# COVERAGE / TEST
+##################################
+coverage/
+.nyc_output/
+
+##################################
+# OS FILES
+##################################
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+##################################
+# EDITORS / IDE
+##################################
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+##################################
+# TYPESCRIPT
+##################################
+*.tsbuildinfo
+
+##################################
+# BACKEND (NODE / EXPRESS)
+##################################
+backend/node_modules/
+backend/dist/
+backend/build/
+
+##################################
+# FRONTEND (REACT / VITE)
+##################################
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+##################################
+# TEMP / CACHE
+##################################
+tmp/
+temp/
+*.tmp
+*.swp
+
+##################################
+# DATABASE / SECRETS
+##################################
+*.pem
+*.key
+*.crt
+
+##################################
+# MISC
+##################################
+*.log
