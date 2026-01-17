@@ -8,6 +8,9 @@ async function start() {
 
   const port = process.env.PORT || 5000;
   app.listen(port, () => console.log(`Server running on http://localhost:${port}`));
+//   const dashboardRoutes = require("./routes/dashboardRoutes");
+// app.use("/api/dashboard", dashboardRoutes);
+
 }
 
 start().catch((err) => {

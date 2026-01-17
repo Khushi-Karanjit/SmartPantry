@@ -25,6 +25,10 @@ function createApp() {
 
   app.use("/api/auth", require("./routes/auth.routes"));
   app.use("/api/users", require("./routes/users.routes"));
+  app.use("/api/pantry", require("./routes/pantry.routes"));
+  app.use("/api/categories", require("./routes/categories.routes"));
+  app.use("/api/dashboard", require("./routes/dashboard.routes"));
+
 
   app.use((req, res) => {
     res.status(404).json({ message: "Route not found" });

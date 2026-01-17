@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import PantrySetup from "./pages/PantrySetup";
+import Pantry from "./pages/Pantry";
 
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/pantry-setup" element={<PantrySetup />} />
+        <Route path="pantry" element={<Pantry />} />
 
         <Route
           path="/home"

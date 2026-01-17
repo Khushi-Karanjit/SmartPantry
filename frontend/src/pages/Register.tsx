@@ -23,7 +23,7 @@ export default function Register() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // You can keep this if you want, even though button isn't disabled now.
+
   const canSubmit = useMemo(() => {
     const u = username.trim();
     const e = email.trim();
@@ -149,7 +149,7 @@ export default function Register() {
             </div>
           )}
 
-          {/* disabled removed as you requested */}
+         
           <button className="primary-btn" type="submit">
             {loading ? "Creating..." : "Create Account"}
           </button>
@@ -159,8 +159,7 @@ export default function Register() {
           Already have an account? <Link to="/login">Sign In</Link>
         </div>
 
-        {/* Optional debug if you want to see submit readiness */}
-        {/* <div style={{ marginTop: 10, fontSize: 12, opacity: 0.6 }}>canSubmit: {String(canSubmit)}</div> */}
+        
       </div>
     </div>
   );
