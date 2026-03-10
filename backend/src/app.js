@@ -28,6 +28,12 @@ function createApp() {
   app.use("/api/pantry", require("./routes/pantry.routes"));
   app.use("/api/categories", require("./routes/categories.routes"));
   app.use("/api/dashboard", require("./routes/dashboard.routes"));
+  app.use("/api/recipes", require("./routes/recipes.routes"));
+  app.use("/api/preferences", require("./routes/preferences.routes"));
+  app.use("/api/meal-plans", require("./routes/mealplans.routes"));
+  app.use("/api/shopping-lists", require("./routes/shoppinglists.routes"));
+  app.use("/api/ingredients", require("./routes/ingredients.routes"));
+  app.use("/api/admin", require("./routes/admin.routes"));
 
 
   app.use((req, res) => {

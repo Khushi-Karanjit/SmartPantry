@@ -1,4 +1,4 @@
-import "../styles/dashboard.css";
+import "../styles/Dashboard.css";
 
 export default function StatCard(props: {
   title: string;

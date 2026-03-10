@@ -30,7 +30,7 @@ export default function Home() {
         <div style={{ padding: 16, borderRadius: 16, background: "rgba(147,166,118,0.12)" }}>
           <div style={{ fontSize: 18, fontWeight: 800 }}>Welcome, {user.username}</div>
           <div style={{ marginTop: 6, color: "#5f5f5f" }}>
-            This is your protected dashboard. Next we’ll add Pantry, Recipes, Meal Planner.
+            This is your protected dashboard. Next we'll add Pantry, Recipes, Meal Planner.
           </div>
         </div>
       )}

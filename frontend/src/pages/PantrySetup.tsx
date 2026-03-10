@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
-import {
-  Leaf,
-  Utensils,
-  HeartPulse,
-  Pizza,
-  CheckCircle,
-} from "lucide-react";
+import { Leaf, Utensils, HeartPulse, Pizza, CheckCircle } from "lucide-react";
 import "../styles/PantrySetup.css";
 
 type PresetItem = {
@@ -49,14 +43,13 @@ export default function PantrySetup() {
   const [initializing, setInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  // 1) Fetch presets from backend (MongoDB)
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("token"); // CHANGE if your token key differs
+        const token = localStorage.getItem("token");
         if (!token) {
           setError("No auth token found. Please login again.");
           setLoading(false);
@@ -86,7 +79,6 @@ export default function PantrySetup() {
     })();
   }, []);
 
-  // 2) Initialize pantry using selected preset
   const initializePantry = async () => {
     try {
       setError("");
@@ -96,7 +88,7 @@ export default function PantrySetup() {
         return;
       }
 
-      const token = localStorage.getItem("token"); // CHANGE if your token key differs
+      const token = localStorage.getItem("token");
       if (!token) {
         setError("No auth token found. Please login again.");
         return;
@@ -116,14 +108,11 @@ export default function PantrySetup() {
       const data = await res.json();
 
       if (!res.ok) {
-        // backend sends 409 if already initialized, 404 if preset not found, etc.
         setError(data?.message || "Failed to initialize pantry.");
         return;
       }
 
-      // Success: you can redirect to dashboard/pantry page if you want
-      // window.location.href = "/dashboard"; // optional
-      setError(`✅ Initialized ${data.count || 0} items successfully.`);
+      setError(`Initialized ${data.count || 0} items successfully.`);
     } catch {
       setError("Network error while initializing pantry.");
     } finally {
@@ -134,23 +123,20 @@ export default function PantrySetup() {
   return (
     <DashboardLayout topbar={(openMenu) => <Topbar onOpenMenu={openMenu} />}>
       <div className="preset-page">
-        {/* Header */}
         <div className="preset-head">
           <h2>Pantry Setup</h2>
           <p>Initialize your kitchen with one of our curated baseline presets.</p>
         </div>
 
-        {/* Status */}
         {loading && <p style={{ opacity: 0.7 }}>Loading presets...</p>}
         {error && <p style={{ opacity: 0.9 }}>{error}</p>}
 
-        {/* Presets */}
         {!loading && (
           <div className="preset-grid">
             {presets.map((p) => {
               const Icon = getIconByKey(p.key);
               const preview = (p.items || []).slice(0, 4).map((x) => x.name);
-              const more = (p.items?.length || 0) > 4 ? `+${(p.items.length - 4)} more` : "";
+              const more = (p.items?.length || 0) > 4 ? `+${p.items.length - 4} more` : "";
 
               return (
                 <div
@@ -193,7 +179,6 @@ export default function PantrySetup() {
           </div>
         )}
 
-        {/* CTA */}
         <div className="preset-cta">
           <div>
             <h3>Ready to start cooking?</h3>

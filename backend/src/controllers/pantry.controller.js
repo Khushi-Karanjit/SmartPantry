@@ -2,6 +2,7 @@
 const PantryPreset = require("../models/PantryPreset");
 const PantryItem = require("../models/PantryItem");
 const Category = require("../models/Category");
+const Ingredient = require("../models/Ingredient");
 
 /**
  * Compute expiry ISO date from a base date and shelf life days.
@@ -52,31 +53,67 @@ async function initializePantry(req, res) {
       return res.status(404).json({ message: "Preset not found" });
     }
 
-    const existingCount = await PantryItem.countDocuments({ userId });
-    if (existingCount > 0) {
-      return res.status(409).json({ message: "Pantry already initialized" });
-    }
+    // SMART MERGE: Get existing items for this user to avoid duplicates
+    const existingPantryItems = await PantryItem.find({ userId }).select("ingredientId").lean();
+    const existingIngredientIds = new Set(
+      existingPantryItems
+        .filter((it) => it.ingredientId)
+        .map((it) => it.ingredientId.toString())
+    );
 
     // Build a category name -> _id map once for faster inserts
     const cats = await Category.find().lean();
     const catMap = new Map(cats.map((c) => [String(c.name).toLowerCase(), c._id]));
     const otherId = catMap.get("other") || null;
 
-    const docs = (preset.items || []).map((it) => {
+    const docs = [];
+
+    for (const it of preset.items || []) {
       const catName = String(it.category || "Other");
       const categoryId = catMap.get(catName.toLowerCase()) || otherId;
 
-      return {
+      if (!categoryId) continue;
+
+      const normalizedName = String(it.name || "").trim().toLowerCase();
+      if (!normalizedName) continue;
+
+      const ingredient = await Ingredient.findOneAndUpdate(
+        { name: normalizedName, category: catName },
+        {
+          $setOnInsert: {
+            name: normalizedName,
+            category: catName,
+            defaultUnit: it.unit || "pcs",
+            shelfLifeDays: 0,
+            keywords: [],
+            isCustom: false,
+          },
+        },
+        { new: true, upsert: true }
+      );
+
+      if (!ingredient) {
+        console.warn(`[initializePantry] Could not resolve ingredient: ${normalizedName}`);
+        continue;
+      }
+
+      // Skip if this ingredient is already in the user's pantry
+      if (existingIngredientIds.has(ingredient._id.toString())) {
+        continue;
+      }
+
+      docs.push({
         userId,
-        name: it.name,
-        categoryId, // Option B ref
+        name: ingredient.name,
+        ingredientId: ingredient._id,
+        categoryId,
         quantity: typeof it.quantity === "number" ? it.quantity : 1,
-        unit: it.unit || "pcs",
-        addedAt: new Date(), // base date for shelf-life
+        unit: it.unit || ingredient.defaultUnit || "pcs",
+        addedAt: new Date(),
         source: "preset",
         presetKey: preset.key,
-      };
-    });
+      });
+    }
 
     // Guard: if you have no "Other" category seeded, this will fail
     // because categoryId is required. Better to error clearly:
@@ -87,15 +124,23 @@ async function initializePantry(req, res) {
       });
     }
 
-    await PantryItem.insertMany(docs);
+    if (docs.length > 0) {
+      console.log(`[initializePantry] Attempting to insert ${docs.length} items for user ${userId}`);
+      await PantryItem.insertMany(docs);
+    } else {
+      console.log(`[initializePantry] No new items to insert for user ${userId}`);
+    }
 
     return res.status(201).json({
       message: "Pantry initialized successfully",
       count: docs.length,
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Failed to initialize pantry" });
+    console.error("[initializePantry] Error:", err);
+    return res.status(500).json({ 
+      message: "Failed to initialize pantry",
+      error: err.message 
+    });
   }
 }
 
@@ -110,18 +155,22 @@ async function getPantryItems(req, res) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const items = await PantryItem.find({ userId })
-      .populate("categoryId") // expects Category model
+      .populate("categoryId")
+      .populate("ingredientId")
       .sort({ addedAt: -1, createdAt: -1 })
       .lean();
 
     const mapped = items.map((it) => {
       const cat = it.categoryId || {};
-      const shelfLifeDays = cat.shelfLifeDays ?? 30;
+      const ingredient = it.ingredientId || {};
+      const shelfLifeDays = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
       const base = it.addedAt || it.createdAt || new Date();
 
       return {
         ...it,
-        category: cat.name || "Other",
+        ingredientId: ingredient._id ? ingredient._id.toString() : it.ingredientId,
+        name: ingredient.name || it.name,
+        category: ingredient.category || cat.name || "Other",
         shelfLifeDays,
         expiryDate: computeExpiryIso(base, shelfLifeDays),
       };
@@ -144,20 +193,20 @@ async function addPantryItem(req, res) {
     const userId = req.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { name, categoryId, quantity, unit } = req.body;
+    const { ingredientId, quantity, unit } = req.body;
 
-    if (!name || !String(name).trim()) {
-      return res.status(400).json({ message: "Item name is required" });
+    if (!ingredientId) {
+      return res.status(400).json({ message: "ingredientId is required" });
     }
 
-    if (!categoryId) {
-      return res.status(400).json({ message: "categoryId is required" });
+    const ingredient = await Ingredient.findById(ingredientId).lean();
+    if (!ingredient) {
+      return res.status(400).json({ message: "Invalid ingredientId" });
     }
 
-    // Ensure category exists (avoids dangling refs)
-    const catExists = await Category.exists({ _id: categoryId });
-    if (!catExists) {
-      return res.status(400).json({ message: "Invalid categoryId" });
+    const categoryDoc = await Category.findOne({ name: ingredient.category }).lean();
+    if (!categoryDoc) {
+      return res.status(400).json({ message: "Invalid ingredient category" });
     }
 
     const q = Number(quantity ?? 1);
@@ -167,10 +216,11 @@ async function addPantryItem(req, res) {
 
     const item = await PantryItem.create({
       userId,
-      name: String(name).trim(),
-      categoryId,
+      name: ingredient.name,
+      ingredientId: ingredient._id,
+      categoryId: categoryDoc._id,
       quantity: q,
-      unit: unit || "pcs",
+      unit: unit || ingredient.defaultUnit || "pcs",
       addedAt: new Date(),
       source: "manual",
       presetKey: null,
@@ -194,20 +244,23 @@ async function updatePantryItem(req, res) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const { id } = req.params;
-    const { name, categoryId, quantity, unit } = req.body;
+    const { ingredientId, quantity, unit } = req.body;
 
     const update = {};
 
-    if (name !== undefined) {
-      const n = String(name).trim();
-      if (!n) return res.status(400).json({ message: "Item name cannot be empty" });
-      update.name = n;
-    }
-
-    if (categoryId !== undefined) {
-      const catExists = await Category.exists({ _id: categoryId });
-      if (!catExists) return res.status(400).json({ message: "Invalid categoryId" });
-      update.categoryId = categoryId;
+    if (ingredientId !== undefined) {
+      const ingredient = await Ingredient.findById(ingredientId).lean();
+      if (!ingredient) return res.status(400).json({ message: "Invalid ingredientId" });
+      const categoryDoc = await Category.findOne({ name: ingredient.category }).lean();
+      if (!categoryDoc) {
+        return res.status(400).json({ message: "Invalid ingredient category" });
+      }
+      update.ingredientId = ingredient._id;
+      update.name = ingredient.name;
+      update.categoryId = categoryDoc._id;
+      if (unit === undefined) {
+        update.unit = ingredient.defaultUnit || "pcs";
+      }
     }
 
     if (quantity !== undefined) {

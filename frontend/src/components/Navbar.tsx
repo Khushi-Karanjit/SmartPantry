@@ -14,7 +14,7 @@ export default function Navbar() {
   return (
     <header style={styles.header}>
       <div style={styles.brand}>
-        <div style={styles.logo}>🌿</div>
+        <div style={styles.logo}>SP</div>
         <div>
           <div style={styles.title}>SmartPantry</div>
           <div style={styles.sub}>Simplify your kitchen management</div>

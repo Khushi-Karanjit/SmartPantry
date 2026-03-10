@@ -7,10 +7,11 @@ import {
   CalendarDays,
   ShoppingCart,
   User,
+  Shield,
   LogOut,
 } from "lucide-react";
-import { clearAuth } from "../auth/auth";
-import "../styles/dashboard.css";
+import { clearAuth, getUser } from "../auth/auth";
+import "../styles/Dashboard.css";
 
 type NavItem = {
   label: string;
@@ -27,6 +28,7 @@ export default function Sidebar({
 }) {
   const loc = useLocation();
   const nav = useNavigate();
+  const user = getUser();
 
   const wrapperClass = variant === "desktop" ? "sidebar" : "";
 
@@ -39,6 +41,10 @@ export default function Sidebar({
     { label: "Shopping List", path: "/shopping-list", icon: <ShoppingCart size={18} /> },
     { label: "Profile", path: "/profile", icon: <User size={18} /> },
   ];
+
+  if (user?.role === "admin") {
+    items.push({ label: "Admin", path: "/admin", icon: <Shield size={18} /> });
+  }
 
   function go(path: string) {
     nav(path);

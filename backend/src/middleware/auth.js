@@ -16,8 +16,9 @@ function requireAuth(req, res, next) {
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ SINGLE SOURCE OF TRUTH
+    // Single source of truth
     req.userId = payload.sub;
+    req.userRole = payload.role || "user";
 
     next();
   } catch (err) {
@@ -25,4 +26,12 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+function requireRole(role) {
+  return function requireRoleMiddleware(req, res, next) {
+    if (!req.userRole) return res.status(401).json({ message: "Unauthorized" });
+    if (req.userRole !== role) return res.status(403).json({ message: "Forbidden" });
+    return next();
+  };
+}
+
+module.exports = { requireAuth, requireRole };

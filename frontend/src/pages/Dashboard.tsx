@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
-import "../styles/dashboard.css";
+import "../styles/Dashboard.css";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -35,7 +35,6 @@ type DashboardSummary = {
 };
 
 function getToken(): string {
-  // Must match your localStorage key
   return localStorage.getItem("token") || "";
 }
 
@@ -46,7 +45,6 @@ async function fetchDashboardSummary(): Promise<DashboardSummary> {
     throw new Error("Login required. Token not found.");
   }
 
-  // IMPORTANT: Use ONLY Bearer token format (backend expects this)
   const res = await fetch(`${API_BASE}/api/dashboard/summary`, {
     method: "GET",
     headers: {

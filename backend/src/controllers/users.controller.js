@@ -5,7 +5,14 @@ async function me(req, res, next) {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json({ user: { id: user._id.toString(), username: user.username, email: user.email } });
+    res.json({
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        role: user.role || "user",
+      },
+    });
   } catch (err) {
     next(err);
   }

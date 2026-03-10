@@ -120,16 +120,14 @@ input:focus {
   color: #b00020;
 }
 
-/* ------------------------------ */
 /* Password toggle INSIDE the input */
-/* ------------------------------ */
 .pw-wrap {
   position: relative;
   width: 100%;
 }
 
 .pw-input {
-  padding-right: 74px; /* room for Show/Hide */
+  padding-right: 74px;
 }
 
 .pw-toggle {
@@ -148,8 +146,8 @@ input:focus {
 
   cursor: pointer;
   font-size: 12px;
-  font-weight: 400;        
-  color: #9a9a9a;           
+  font-weight: 400;
+  color: #9a9a9a;
   opacity: 1;
 
   display: inline-flex;
@@ -159,16 +157,7 @@ input:focus {
 }
 
 .pw-toggle:hover {
-  color: #7e7e7e;          
-}
-
-.pw-toggle:focus {
-  outline: none;
-}
-
-
-.pw-toggle:hover {
-  opacity: 1;
+  color: #7e7e7e;
 }
 
 .pw-toggle:focus {

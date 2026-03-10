@@ -2,9 +2,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-function signToken(userId) {
+function signToken(userId, role) {
   if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is missing in .env");
-  return jwt.sign({ sub: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ sub: userId, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 }
 
 async function register(req, res, next) {
@@ -31,10 +31,19 @@ async function register(req, res, next) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).toLowerCase().trim() : "";
+    const adminUsername = process.env.ADMIN_USERNAME ? String(process.env.ADMIN_USERNAME).trim() : "";
+    const role =
+      (adminEmail && normalizedEmail === adminEmail) ||
+      (adminUsername && normalizedUsername === adminUsername)
+        ? "admin"
+        : "user";
+
     const user = await User.create({
       username: normalizedUsername,
       email: normalizedEmail,
       passwordHash,
+      role,
     });
 
     return res.status(201).json({
@@ -42,6 +51,7 @@ async function register(req, res, next) {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
+        role: user.role || "user",
       },
     });
   } catch (err) {
@@ -70,7 +80,8 @@ async function login(req, res, next) {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = signToken(user._id.toString());
+    const role = user.role || "user";
+    const token = signToken(user._id.toString(), role);
 
     return res.json({
       token,
@@ -78,6 +89,7 @@ async function login(req, res, next) {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
+        role,
       },
     });
   } catch (err) {

@@ -1,6 +1,6 @@
 import { Menu, Bell } from "lucide-react";
 import { getUser } from "../auth/auth";
-import "../styles/dashboard.css";
+import "../styles/Dashboard.css";
 
 export default function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const user = getUser();
@@ -18,7 +18,7 @@ export default function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
 
         <div>
           <h1>Welcome back, {user?.username ?? "User"}!</h1>
-          <p>Here&apos;s what&apos;s happening in your kitchen today.</p>
+          <p>Here's what's happening in your kitchen today.</p>
         </div>
       </div>
 

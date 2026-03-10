@@ -1,0 +1,363 @@
+:root {
+  --admin-accent: #2d5b4b;
+  --admin-accent-soft: rgba(45, 91, 75, 0.12);
+  --admin-ink: #1b1b1b;
+  --admin-warm: #f6f2ea;
+  --admin-warning: #e0b400;
+  --admin-danger: #d94c45;
+  --admin-blue: #2d6cdf;
+}
+
+.admin-topbar .admin-bell {
+  background: var(--admin-accent-soft);
+  border-color: rgba(45, 91, 75, 0.2);
+}
+
+.admin-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  background: linear-gradient(130deg, #fefaf1 0%, #f7f1e6 60%, #f2efe8 100%);
+}
+
+.admin-hero h2 {
+  margin: 8px 0 8px 0;
+  font-size: 20px;
+  color: var(--admin-ink);
+}
+
+.admin-hero p {
+  margin: 0;
+  color: #565656;
+  font-size: 13px;
+  max-width: 420px;
+}
+
+.admin-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--admin-accent);
+}
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--admin-ink);
+}
+
+.admin-btn.primary {
+  background: var(--admin-accent);
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.admin-btn.ghost {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.admin-btn.small {
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+.admin-btn.tiny {
+  padding: 6px 8px;
+  font-size: 10px;
+}
+
+.admin-btn.full {
+  width: 100%;
+  justify-content: center;
+}
+
+.admin-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.admin-grid-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.admin-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.admin-stat {
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.stat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--admin-accent-soft);
+}
+
+.stat-icon.green { background: rgba(75, 160, 98, 0.15); color: #2f7a47; }
+.stat-icon.yellow { background: rgba(224, 180, 0, 0.18); color: #9a7a00; }
+.stat-icon.blue { background: rgba(45, 108, 223, 0.15); color: #2d6cdf; }
+.stat-icon.red { background: rgba(217, 76, 69, 0.15); color: #b83c36; }
+
+.stat-label {
+  font-size: 11px;
+  color: #6b6b6b;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--admin-ink);
+  margin-top: 4px;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: #6b6b6b;
+  margin-top: 2px;
+}
+
+.admin-section {
+  padding: 14px;
+}
+
+.admin-table {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.7fr 0.7fr 0.6fr 0.6fr;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-row.admin-head {
+  background: #f3f1ea;
+  font-weight: 700;
+  color: #4a4a4a;
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
+.cell-title {
+  font-weight: 700;
+  color: var(--admin-ink);
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-action {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.icon-action.danger {
+  color: var(--admin-danger);
+  border-color: rgba(217, 76, 69, 0.25);
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.plan-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.plan-day {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--admin-accent);
+  background: var(--admin-accent-soft);
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.plan-recipe {
+  font-weight: 700;
+  color: var(--admin-ink);
+}
+
+.plan-meta {
+  font-size: 11px;
+  color: #6b6b6b;
+  margin-top: 2px;
+}
+
+.admin-subnote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b6b6b;
+  margin-top: 12px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+
+.tag.green { background: rgba(75, 160, 98, 0.18); color: #2f7a47; }
+.tag.yellow { background: rgba(224, 180, 0, 0.2); color: #9a7a00; }
+.tag.gray { background: rgba(120, 120, 120, 0.15); color: #606060; }
+
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pill-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--admin-warm);
+  color: #5c4a2e;
+}
+
+.health-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.health-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--admin-ink);
+}
+
+.health-sub {
+  font-size: 11px;
+  color: #6b6b6b;
+  margin-top: 2px;
+}
+
+.health-meter {
+  width: 70px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.health-meter.green { background: rgba(75, 160, 98, 0.6); }
+.health-meter.yellow { background: rgba(224, 180, 0, 0.6); }
+.health-meter.red { background: rgba(217, 76, 69, 0.6); }
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 12px 0;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: #4a4a4a;
+}
+
+.muted {
+  color: #6b6b6b;
+}
+
+@media (max-width: 1100px) {
+  .admin-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-hero {
+    flex-direction: column;
+  }
+
+  .admin-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

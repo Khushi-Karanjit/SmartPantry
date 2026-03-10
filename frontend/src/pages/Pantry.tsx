@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import "../styles/Pantry.css";
+import IngredientSearchSelect from "../components/IngredientSearchSelect";
+import type { Ingredient } from "../api/api";
 import {
   Plus,
   Search,
@@ -26,15 +28,15 @@ type Category = {
 type PantryItem = {
   _id: string;
   name: string;
+  ingredientId: string;
 
   // Backend returns computed fields:
-  category: string; // category name (computed in backend)
-  categoryId?: string | { _id: string; name?: string; shelfLifeDays?: number }; // may be id or populated object
+  category: string;
   shelfLifeDays?: number;
 
   quantity: number;
   unit: string;
-  expiryDate: string | null; // computed by backend
+  expiryDate: string | null;
   source?: "manual" | "preset";
   presetKey?: string | null;
 };
@@ -63,32 +65,28 @@ export default function Pantry() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Categories (Option B)
   const [categories, setCategories] = useState<Category[]>([]);
   const [catLoading, setCatLoading] = useState(true);
 
-  // UI state
   const [tab, setTab] = useState<"all" | "student" | "nepali" | "italian">("all");
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All");
 
-  // Add modal (categoryId required)
   const [openAdd, setOpenAdd] = useState(false);
   const [addForm, setAddForm] = useState({
-    name: "",
-    categoryId: "",
+    category: "",
+    ingredient: null as Ingredient | null,
     quantity: 1,
-    unit: "pcs",
+    unit: "",
   });
 
-  // Edit modal (categoryId required)
   const [openEdit, setOpenEdit] = useState(false);
   const [editId, setEditId] = useState<string>("");
   const [editForm, setEditForm] = useState({
-    name: "",
-    categoryId: "",
+    category: "",
+    ingredient: null as Ingredient | null,
     quantity: 1,
-    unit: "pcs",
+    unit: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -146,10 +144,9 @@ export default function Pantry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-select a default categoryId for Add modal
   useEffect(() => {
-    if (!addForm.categoryId && categories.length > 0) {
-      setAddForm((p) => ({ ...p, categoryId: categories[0]._id }));
+    if (!addForm.category && categories.length > 0) {
+      setAddForm((p) => ({ ...p, category: categories[0].name }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories]);
@@ -187,20 +184,20 @@ export default function Pantry() {
     return list;
   }, [items, tab, q, category]);
 
-  function resolveCategoryId(it: PantryItem): string {
-    const c = it.categoryId;
-    if (!c) return "";
-    if (typeof c === "string") return c;
-    return c._id || "";
-  }
-
   function openEditModal(it: PantryItem) {
     setEditId(it._id);
     setEditForm({
-      name: it.name || "",
-      categoryId: resolveCategoryId(it) || addForm.categoryId || "",
+      category: it.category || addForm.category || "",
+      ingredient: {
+        _id: it.ingredientId,
+        name: it.name,
+        category: it.category,
+        defaultUnit: it.unit,
+        shelfLifeDays: it.shelfLifeDays || 0,
+        isCustom: false,
+      },
       quantity: it.quantity ?? 1,
-      unit: it.unit || "pcs",
+      unit: it.unit || "",
     });
     setOpenEdit(true);
   }
@@ -210,12 +207,8 @@ export default function Pantry() {
       setSaving(true);
       setError("");
 
-      if (!addForm.name.trim()) {
-        setError("Item name is required.");
-        return;
-      }
-      if (!addForm.categoryId) {
-        setError("Please select a category.");
+      if (!addForm.ingredient) {
+        setError("Please select an ingredient.");
         return;
       }
 
@@ -229,10 +222,9 @@ export default function Pantry() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: addForm.name.trim(),
-          categoryId: addForm.categoryId, // ✅ Option B required
+          ingredientId: addForm.ingredient._id,
           quantity: Number(addForm.quantity) || 1,
-          unit: addForm.unit,
+          unit: addForm.unit || addForm.ingredient.defaultUnit || "pcs",
         }),
       });
 
@@ -241,10 +233,10 @@ export default function Pantry() {
 
       setOpenAdd(false);
       setAddForm({
-        name: "",
-        categoryId: categories[0]?._id || "",
+        category: categories[0]?.name || "",
+        ingredient: null,
         quantity: 1,
-        unit: "pcs",
+        unit: "",
       });
 
       await fetchItems();
@@ -262,12 +254,8 @@ export default function Pantry() {
 
       if (!editId) return;
 
-      if (!editForm.name.trim()) {
-        setError("Item name is required.");
-        return;
-      }
-      if (!editForm.categoryId) {
-        setError("Please select a category.");
+      if (!editForm.ingredient) {
+        setError("Please select an ingredient.");
         return;
       }
 
@@ -281,10 +269,9 @@ export default function Pantry() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: editForm.name.trim(),
-          categoryId: editForm.categoryId, // ✅ Option B required
+          ingredientId: editForm.ingredient._id,
           quantity: Number(editForm.quantity) || 1,
-          unit: editForm.unit,
+          unit: editForm.unit || editForm.ingredient.defaultUnit || "pcs",
         }),
       });
 
@@ -331,7 +318,6 @@ export default function Pantry() {
   return (
     <DashboardLayout topbar={(openMenu) => <Topbar onOpenMenu={openMenu} />}>
       <div className="pantry-page">
-        {/* Header row */}
         <div className="pantry-head">
           <div>
             <h2 className="pantry-title">Pantry Management</h2>
@@ -352,7 +338,6 @@ export default function Pantry() {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="pantry-tabs">
           <button className={tab === "all" ? "active" : ""} onClick={() => setTab("all")}>
             My Kitchen
@@ -368,7 +353,6 @@ export default function Pantry() {
           </button>
         </div>
 
-        {/* Expiry warning bar */}
         {expiringSoon.length > 0 && (
           <div className="pantry-warning">
             <div className="warning-left">
@@ -382,13 +366,10 @@ export default function Pantry() {
                 </div>
               </div>
             </div>
-            <button className="warning-link" onClick={() => setQ("")}>
-              Show Items
-            </button>
+            <button className="warning-link" onClick={() => setQ("")}>Show Items</button>
           </div>
         )}
 
-        {/* Controls */}
         <div className="pantry-controls card">
           <div className="search">
             <Search size={14} />
@@ -403,7 +384,7 @@ export default function Pantry() {
             <span>Category</span>
             <div className="category-select">
               <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                {["All", ...categories.map((c) => c.name)].map((c) => (
+                {['All', ...categories.map((c) => c.name)].map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -414,10 +395,8 @@ export default function Pantry() {
           </div>
         </div>
 
-        {/* Errors */}
         {error && <div className="error">{error}</div>}
 
-        {/* Table */}
         {loading ? (
           <div className="muted" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <Loader2 className="spin" size={16} /> Loading pantry items...
@@ -448,7 +427,7 @@ export default function Pantry() {
                       <td>
                         <span className="tag">{it.category || "Other"}</span>
                       </td>
-                      <td>{it.expiryDate ? it.expiryDate.slice(0, 10) : "—"}</td>
+                      <td>{it.expiryDate ? it.expiryDate.slice(0, 10) : "-"}</td>
                       <td>
                         <span className={`badge ${st.kind}`}>{st.label}</span>
                       </td>
@@ -483,7 +462,6 @@ export default function Pantry() {
           </div>
         )}
 
-        {/* Add Modal */}
         {openAdd && (
           <div className="modal-overlay" onClick={() => setOpenAdd(false)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -496,24 +474,38 @@ export default function Pantry() {
 
               <div className="modal-grid">
                 <label>
-                  Name*
-                  <input value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} />
-                </label>
-
-                <label>
                   Category
                   <select
-                    value={addForm.categoryId}
-                    onChange={(e) => setAddForm({ ...addForm, categoryId: e.target.value })}
+                    value={addForm.category}
+                    onChange={(e) =>
+                      setAddForm({
+                        ...addForm,
+                        category: e.target.value,
+                        ingredient: null,
+                        unit: "",
+                      })
+                    }
                     disabled={catLoading || categories.length === 0}
                   >
                     {categories.map((c) => (
-                      <option key={c._id} value={c._id}>
+                      <option key={c._id} value={c.name}>
                         {c.name}
                       </option>
                     ))}
                   </select>
                 </label>
+
+                <IngredientSearchSelect
+                  category={addForm.category}
+                  value={addForm.ingredient}
+                  onChange={(ingredient) =>
+                    setAddForm((prev) => ({
+                      ...prev,
+                      ingredient,
+                      unit: ingredient ? ingredient.defaultUnit || prev.unit : "",
+                    }))
+                  }
+                />
 
                 <label>
                   Quantity
@@ -527,13 +519,11 @@ export default function Pantry() {
 
                 <label>
                   Unit
-                  <select value={addForm.unit} onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })}>
-                    <option value="pcs">pcs</option>
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                    <option value="L">L</option>
-                    <option value="ml">ml</option>
-                  </select>
+                  <input
+                    value={addForm.unit}
+                    onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })}
+                    placeholder="pcs"
+                  />
                 </label>
               </div>
 
@@ -549,7 +539,6 @@ export default function Pantry() {
           </div>
         )}
 
-        {/* Edit Modal */}
         {openEdit && (
           <div className="modal-overlay" onClick={() => setOpenEdit(false)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -562,24 +551,38 @@ export default function Pantry() {
 
               <div className="modal-grid">
                 <label>
-                  Name*
-                  <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-                </label>
-
-                <label>
                   Category
                   <select
-                    value={editForm.categoryId}
-                    onChange={(e) => setEditForm({ ...editForm, categoryId: e.target.value })}
+                    value={editForm.category}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        category: e.target.value,
+                        ingredient: null,
+                        unit: "",
+                      })
+                    }
                     disabled={catLoading || categories.length === 0}
                   >
                     {categories.map((c) => (
-                      <option key={c._id} value={c._id}>
+                      <option key={c._id} value={c.name}>
                         {c.name}
                       </option>
                     ))}
                   </select>
                 </label>
+
+                <IngredientSearchSelect
+                  category={editForm.category}
+                  value={editForm.ingredient}
+                  onChange={(ingredient) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      ingredient,
+                      unit: ingredient ? ingredient.defaultUnit || prev.unit : "",
+                    }))
+                  }
+                />
 
                 <label>
                   Quantity
@@ -593,13 +596,11 @@ export default function Pantry() {
 
                 <label>
                   Unit
-                  <select value={editForm.unit} onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}>
-                    <option value="pcs">pcs</option>
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                    <option value="L">L</option>
-                    <option value="ml">ml</option>
-                  </select>
+                  <input
+                    value={editForm.unit}
+                    onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                    placeholder="pcs"
+                  />
                 </label>
               </div>
 

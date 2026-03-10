@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import "../styles/dashboard.css";
+import "../styles/Dashboard.css";
 
 export default function DashboardLayout(props: {
   topbar: (openMenu: () => void) => React.ReactNode;

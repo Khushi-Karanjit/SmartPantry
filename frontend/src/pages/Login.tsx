@@ -39,11 +39,10 @@ export default function Login() {
         password,
       });
 
-      // Save token + user to localStorage
       saveAuth(res.token, res.user);
 
-      // Go to protected home
-      nav("/home");
+      const nextPath = res.user.role === "admin" ? "/admin" : "/home";
+      nav(nextPath);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -55,7 +54,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-brand">
-          <div className="auth-logo">🌿</div>
+          <div className="auth-logo">SP</div>
           <h1 className="auth-title">SmartPantry</h1>
           <p className="auth-subtitle">Sign in to continue</p>
         </div>
@@ -77,7 +76,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="password"
               autoComplete="current-password"
             />
           </div>

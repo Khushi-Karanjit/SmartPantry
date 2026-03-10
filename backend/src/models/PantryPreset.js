@@ -12,7 +12,7 @@ const PresetItemSchema = new mongoose.Schema(
 
 const PantryPresetSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, unique: true, index: true, trim: true },
+    key: { type: String, required: true, unique: true, trim: true },
     title: { type: String, required: true },
     description: { type: String, default: "" },
     items: { type: [PresetItemSchema], default: [] },

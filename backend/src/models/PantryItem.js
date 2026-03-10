@@ -5,6 +5,12 @@ const PantryItemSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
 
     name: { type: String, required: true, trim: true },
+    ingredientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Ingredient",
+      required: true,
+      index: true,
+    },
 
     // NEW: reference category (Option B)
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
@@ -26,6 +32,6 @@ const PantryItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-PantryItemSchema.index({ userId: 1, name: 1 });
+PantryItemSchema.index({ userId: 1, ingredientId: 1 });
 
 module.exports = mongoose.model("PantryItem", PantryItemSchema);
