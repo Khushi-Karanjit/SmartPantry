@@ -28,7 +28,8 @@ export type Recipe = {
   steps: string[];
   imageUrl: string;
   views?: number;
-  status: string;
+  matchPercentage?: number;
+  matchedCount?: number;
 };
 
 export type Preferences = {
@@ -94,7 +95,11 @@ export type AdminStats = {
   archivedRecipes: number;
   totalUsers: number;
   totalCategories: number;
+  totalPantryItems: number;
+  totalCookingActivities: number;
   reviewQueue: number;
+  mostCookedRecipe: string;
+  mostUsedIngredient: string;
 };
 
 export type AdminActivity = {
@@ -103,6 +108,47 @@ export type AdminActivity = {
   status: string;
   updatedAt: string;
   views?: number;
+};
+
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  avatarUrl?: string;
+  createdAt?: string;
+};
+
+export type UserProfile = {
+  profile: User;
+  stats: {
+    totalPantryItems: number;
+    mostStoredIngredient: string;
+    totalCooked: number;
+  };
+  recentLogs: any[];
+  savedRecipes: any[];
+};
+
+export type AdminUser = {
+  _id: string;
+  username: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type AdminCookingLog = {
+  _id: string;
+  userId: { _id: string; username: string };
+  recipeId: { _id: string; name: string };
+  performedAt: string;
+};
+
+export type AdminAnalytics = {
+  mostCooked: { name: string; count: number }[];
+  ingredientStats: { name: string; count: number }[];
 };
 
 /* =========================
@@ -189,6 +235,36 @@ export function meApi() {
   });
 }
 
+/**
+ * Get current logged-in user profile
+ * Requires Authorization header
+ */
+export function getProfileApi() {
+  return request<UserProfile>("/users/profile", { method: "GET" });
+}
+
+export function updateProfileApi(data: { username?: string; email?: string; avatarUrl?: string }) {
+  return request<{ user: User }>("/users/profile", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function changePasswordApi(data: any) {
+  return request<{ ok: boolean; message: string }>("/users/change-password", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getSavedRecipesApi() {
+  return request<{ recipes: Recipe[] }>("/recipes/saved", { method: "GET" });
+}
+
+export function toggleSaveRecipeApi(recipeId: string) {
+  return request<{ saved: boolean }>(`/recipes/saved/${recipeId}`, { method: "POST" });
+}
+
 /* =========================
    Recipe APIs
 ========================= */
@@ -213,6 +289,11 @@ export function updateRecipeApi(id: string, payload: Partial<Recipe>) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+}
+
+export function suggestRecipesApi(ingredientIds: string[]) {
+  const ids = ingredientIds.join(",");
+  return request<{ recipes: Recipe[] }>(`/recipes/suggested?ingredientIds=${ids}`, { method: "GET" });
 }
 
 /* =========================
@@ -308,4 +389,29 @@ export function updateRecipeStatusApi(id: string, status: string) {
 
 export function deleteRecipeApi(id: string) {
   return request<{ ok: boolean }>(`/recipes/${id}`, { method: "DELETE" });
+}
+
+/* =========================
+   Expanded Admin APIs
+   ========================= */
+
+export function getAdminUsersApi(q?: string) {
+  const query = q ? `?q=${encodeURIComponent(q)}` : "";
+  return request<{ users: AdminUser[] }>(`/admin/users${query}`, { method: "GET" });
+}
+
+export function toggleUserStatusApi(id: string) {
+  return request<{ user: AdminUser }>(`/admin/users/${id}/status`, { method: "PATCH" });
+}
+
+export function deleteUserApi(id: string) {
+  return request<{ ok: boolean }>(`/admin/users/${id}`, { method: "DELETE" });
+}
+
+export function getAdminLogsApi() {
+  return request<{ logs: AdminCookingLog[] }>("/admin/logs", { method: "GET" });
+}
+
+export function getAdminAnalyticsApi() {
+  return request<AdminAnalytics>("/admin/analytics", { method: "GET" });
 }

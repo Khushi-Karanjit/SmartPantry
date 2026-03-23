@@ -13,6 +13,10 @@ import {
   Menu,
   Eye,
   EyeOff,
+  Refrigerator,
+  Zap,
+  Flame,
+  Utensils,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { getUser } from "../auth/auth";
@@ -143,23 +147,13 @@ export default function Admin() {
             <BookOpen size={18} />
           </div>
           <div>
-            <div className="stat-label">Total recipes</div>
+            <div className="stat-label">Total Recipes</div>
             <div className="stat-value">{stats?.totalRecipes ?? 0}</div>
             <div className="stat-sub">{stats?.publishedRecipes ?? 0} published</div>
           </div>
         </div>
         <div className="card admin-stat">
           <div className="stat-icon yellow">
-            <ShieldCheck size={18} />
-          </div>
-          <div>
-            <div className="stat-label">Review queue</div>
-            <div className="stat-value">{stats?.reviewQueue ?? 0} pending</div>
-            <div className="stat-sub">{stats?.draftRecipes ?? 0} drafts</div>
-          </div>
-        </div>
-        <div className="card admin-stat">
-          <div className="stat-icon blue">
             <Users size={18} />
           </div>
           <div>
@@ -169,13 +163,44 @@ export default function Admin() {
           </div>
         </div>
         <div className="card admin-stat">
-          <div className="stat-icon red">
-            <Tag size={18} />
+          <div className="stat-icon blue">
+            <Refrigerator size={18} />
           </div>
           <div>
-            <div className="stat-label">Categories</div>
-            <div className="stat-value">{stats?.totalCategories ?? 0}</div>
-            <div className="stat-sub">Managed types</div>
+            <div className="stat-label">Pantry Items</div>
+            <div className="stat-value">{stats?.totalPantryItems ?? 0}</div>
+            <div className="stat-sub">Current stock tracked</div>
+          </div>
+        </div>
+        <div className="card admin-stat">
+          <div className="stat-icon red">
+            <Zap size={18} />
+          </div>
+          <div>
+            <div className="stat-label">Cooking Logs</div>
+            <div className="stat-value">{stats?.totalCookingActivities ?? 0}</div>
+            <div className="stat-sub">Actions recorded</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="admin-grid-2" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="card admin-stat highlight">
+          <div className="stat-icon orange">
+            <Flame size={18} />
+          </div>
+          <div>
+            <div className="stat-label">Most Cooked Recipe</div>
+            <div className="stat-value small">{stats?.mostCookedRecipe || "None"}</div>
+          </div>
+        </div>
+        <div className="card admin-stat highlight">
+          <div className="stat-icon purple">
+            <Utensils size={18} />
+          </div>
+          <div>
+            <div className="stat-label">Most Used Ingredient</div>
+            <div className="stat-value small">{stats?.mostUsedIngredient || "None"}</div>
           </div>
         </div>
       </div>

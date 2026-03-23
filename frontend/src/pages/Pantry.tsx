@@ -8,6 +8,7 @@ import type { Ingredient } from "../api/api";
 import {
   Plus,
   Search,
+  Sparkles,
   SlidersHorizontal,
   ChevronDown,
   AlertCircle,
@@ -324,18 +325,27 @@ export default function Pantry() {
             <p className="pantry-sub">Track and manage your ingredients effectively.</p>
           </div>
 
-          <button
-            className="pantry-btn primary"
-            onClick={() => {
-              if (categories.length === 0) {
-                setError('No categories found. Seed the "categories" collection first.');
-                return;
-              }
-              setOpenAdd(true);
-            }}
-          >
-            <Plus size={16} /> Add New Item
-          </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button
+              className="pantry-btn ghost"
+              onClick={() => window.location.href = '/recipe-suggester'}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Sparkles size={16} /> Find Recipes
+            </button>
+            <button
+              className="pantry-btn primary"
+              onClick={() => {
+                if (categories.length === 0) {
+                  setError('No categories found. Seed the "categories" collection first.');
+                  return;
+                }
+                setOpenAdd(true);
+              }}
+            >
+              <Plus size={16} /> Add New Item
+            </button>
+          </div>
         </div>
 
         <div className="pantry-tabs">

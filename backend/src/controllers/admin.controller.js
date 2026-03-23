@@ -1,20 +1,50 @@
 const Recipe = require("../models/Recipe");
 const User = require("../models/User");
 const Category = require("../models/Category");
+const PantryItem = require("../models/PantryItem");
+const CookingLog = require("../models/CookingLog");
+const Ingredient = require("../models/Ingredient");
 
 exports.getAdminStats = async (req, res) => {
   try {
-    const totalRecipes = await Recipe.countDocuments();
-    const publishedRecipes = await Recipe.countDocuments({ status: "published" });
-    const draftRecipes = await Recipe.countDocuments({ status: "draft" });
-    const archivedRecipes = await Recipe.countDocuments({ status: "archived" });
-    
-    const totalUsers = await User.countDocuments();
-    const totalCategories = await Category.countDocuments();
-    
-    // For demo purposes, we'll assume some "pending" logic if needed, 
-    // but for now let's just use the status.
-    const reviewQueue = draftRecipes; 
+    const [
+      totalRecipes,
+      publishedRecipes,
+      draftRecipes,
+      archivedRecipes,
+      totalUsers,
+      totalCategories,
+      totalPantryItems,
+      totalCookingActivities
+    ] = await Promise.all([
+      Recipe.countDocuments(),
+      Recipe.countDocuments({ status: "published" }),
+      Recipe.countDocuments({ status: "draft" }),
+      Recipe.countDocuments({ status: "archived" }),
+      User.countDocuments(),
+      Category.countDocuments(),
+      PantryItem.countDocuments(),
+      CookingLog.countDocuments()
+    ]);
+
+    // Most cooked recipe (top by CookingLog frequency)
+    const mostCookedAgg = await CookingLog.aggregate([
+      { $group: { _id: "$recipeId", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+      { $lookup: { from: "recipes", localField: "_id", foreignField: "_id", as: "recipe" } },
+      { $unwind: "$recipe" }
+    ]);
+    const mostCookedRecipe = mostCookedAgg[0]?.recipe?.name || "N/A";
+
+    // Most used ingredient
+    const mostUsedIngAgg = await CookingLog.aggregate([
+      { $unwind: "$ingredientsUsed" },
+      { $group: { _id: "$ingredientsUsed.ingredientId", name: { $first: "$ingredientsUsed.name" }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 }
+    ]);
+    const mostUsedIngredient = mostUsedIngAgg[0]?.name || "N/A";
 
     res.json({
       stats: {
@@ -24,7 +54,11 @@ exports.getAdminStats = async (req, res) => {
         archivedRecipes,
         totalUsers,
         totalCategories,
-        reviewQueue
+        totalPantryItems,
+        totalCookingActivities,
+        reviewQueue: draftRecipes,
+        mostCookedRecipe,
+        mostUsedIngredient
       }
     });
   } catch (err) {
@@ -49,5 +83,85 @@ exports.getAdminActivities = async (req, res) => {
     res.json({ recentRecipes, popularRecipes });
   } catch (err) {
     res.status(500).json({ message: err.message || "Failed to fetch admin activities" });
+  }
+};
+
+exports.getAdminUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    const query = {};
+    if (q) {
+      query.$or = [
+        { username: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } }
+      ];
+    }
+    const users = await User.find(query).sort({ createdAt: -1 }).lean();
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to fetch users" });
+  }
+};
+
+exports.toggleUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    user.isActive = !user.isActive;
+    await user.save();
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to toggle user status" });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to delete user" });
+  }
+};
+
+exports.getAdminLogs = async (req, res) => {
+  try {
+    const logs = await CookingLog.find()
+      .sort({ performedAt: -1 })
+      .limit(50)
+      .populate("userId", "username")
+      .populate("recipeId", "name")
+      .lean();
+    res.json({ logs });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to fetch logs" });
+  }
+};
+
+exports.getAdminAnalytics = async (req, res) => {
+  try {
+    // Most cooked recipes (top 10)
+    const mostCooked = await CookingLog.aggregate([
+      { $group: { _id: "$recipeId", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+      { $lookup: { from: "recipes", localField: "_id", foreignField: "_id", as: "recipe" } },
+      { $unwind: "$recipe" },
+      { $project: { name: "$recipe.name", count: 1 } }
+    ]);
+
+    // Ingredient usage
+    const ingredientStats = await CookingLog.aggregate([
+      { $unwind: "$ingredientsUsed" },
+      { $group: { _id: "$ingredientsUsed.ingredientId", name: { $first: "$ingredientsUsed.name" }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+
+    res.json({ mostCooked, ingredientStats });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to fetch analytics" });
   }
 };

@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "69673a7bbab01a8f94d8c954",
+    "userId": "6953a0b9e9d2a59f96dec462",
+    "name": "Chia Seeds",
+    "categoryId": "69673976cdc63e1383f192f0",
+    "quantity": 250,
+    "unit": "g",
+    "addedAt": "2026-01-14T06:40:59.475Z",
+    "source": "preset",
+    "presetKey": "healthy",
+    "__v": 0,
+    "createdAt": "2026-01-14T06:40:59.496Z",
+    "updatedAt": "2026-01-14T06:40:59.496Z"
+  },
+  {
+    "_id": "69673a7bbab01a8f94d8c957",
+    "userId": "6953a0b9e9d2a59f96dec462",
+    "name": "Almonds",
+    "categoryId": "69673976cdc63e1383f192f5",
+    "quantity": 250,
+    "unit": "g",
+    "addedAt": "2026-01-14T06:40:59.475Z",
+    "source": "preset",
+    "presetKey": "healthy",
+    "__v": 0,
+    "createdAt": "2026-01-14T06:40:59.496Z",
+    "updatedAt": "2026-01-14T06:40:59.496Z"
+  },
+  {
+    "_id": "69673a7bbab01a8f94d8c956",
+    "userId": "6953a0b9e9d2a59f96dec462",
+    "name": "Olive Oil",
+    "categoryId": "69673976cdc63e1383f192f0",
+    "quantity": 500,
+    "unit": "ml",
+    "addedAt": "2026-01-14T06:40:59.475Z",
+    "source": "preset",
+    "presetKey": "healthy",
+    "__v": 0,
+    "createdAt": "2026-01-14T06:40:59.496Z",
+    "updatedAt": "2026-01-14T06:40:59.496Z"
+  }
+]

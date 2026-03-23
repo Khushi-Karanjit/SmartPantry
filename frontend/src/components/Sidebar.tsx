@@ -2,13 +2,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Refrigerator,
-  Settings,
   BookOpen,
   CalendarDays,
-  ShoppingCart,
   User,
   Shield,
   LogOut,
+  BarChart,
+  ScrollText,
+  PlusSquare,
+  Sparkles,
 } from "lucide-react";
 import { clearAuth, getUser } from "../auth/auth";
 import "../styles/Dashboard.css";
@@ -30,21 +32,40 @@ export default function Sidebar({
   const nav = useNavigate();
   const user = getUser();
 
+  const isAdminRoute = loc.pathname.startsWith("/admin");
   const wrapperClass = variant === "desktop" ? "sidebar" : "";
 
-  const items: NavItem[] = [
+  const commonItems: NavItem[] = [
     { label: "Dashboard", path: "/home", icon: <LayoutDashboard size={18} /> },
     { label: "Pantry", path: "/pantry", icon: <Refrigerator size={18} /> },
-    { label: "Pantry Setup", path: "/pantry-setup", icon: <Settings size={18} /> },
+    { label: "Pantry Setup", path: "/pantry-setup", icon: <PlusSquare size={18} /> },
     { label: "Recipes", path: "/recipes", icon: <BookOpen size={18} /> },
+    { label: "Recipe Suggester", path: "/recipe-suggester", icon: <Sparkles size={18} /> },
     { label: "Meal Planner", path: "/meal-planner", icon: <CalendarDays size={18} /> },
-    { label: "Shopping List", path: "/shopping-list", icon: <ShoppingCart size={18} /> },
     { label: "Profile", path: "/profile", icon: <User size={18} /> },
   ];
 
+  const adminItems: NavItem[] = [
+    { label: "Admin Home", path: "/admin", icon: <Shield size={18} /> },
+    { label: "Manage Recipes", path: "/admin/recipes/new", icon: <PlusSquare size={18} /> },
+    { label: "User Management", path: "/admin/users", icon: <User size={18} /> },
+    { label: "Analytics", path: "/admin/analytics", icon: <BarChart size={18} /> },
+    { label: "Activity Logs", path: "/admin/logs", icon: <ScrollText size={18} /> },
+  ];
+
+  const items = isAdminRoute ? adminItems : commonItems;
+
+  // Add "Back to User View" or "Admin" link at the bottom
+  const footerItems: NavItem[] = [];
   if (user?.role === "admin") {
-    items.push({ label: "Admin", path: "/admin", icon: <Shield size={18} /> });
+    if (isAdminRoute) {
+      footerItems.push({ label: "Exit Admin", path: "/home", icon: <LogOut size={18} /> });
+    } else {
+      footerItems.push({ label: "Admin Panel", path: "/admin", icon: <Shield size={18} /> });
+    }
   }
+
+  items.push(...footerItems);
 
   function go(path: string) {
     nav(path);

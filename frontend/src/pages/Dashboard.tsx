@@ -1,5 +1,6 @@
 // frontend/src/pages/Dashboard.tsx
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
@@ -11,6 +12,8 @@ import {
   CircleAlert,
   TrendingDown,
   ChevronRight,
+  Sparkles,
+  PlusSquare
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -83,6 +86,7 @@ function alertUi(type: "expired" | "expiring" | "low") {
 }
 
 export default function Dashboard() {
+  const nav = useNavigate();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -137,6 +141,33 @@ export default function Dashboard() {
 
       {!loading && !error && data && (
         <>
+          {/* Welcome Banner if Pantry is Empty */}
+          {stats?.totalItems === 0 && (
+            <div className="card section welcome-banner" style={{ background: 'linear-gradient(135deg, #93a676 0%, #6b8c42 100%)', color: 'white', marginBottom: '1.5rem', border: 'none' }}>
+              <div className="section-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Welcome to SmartPantry!</h2>
+                  <p style={{ opacity: 0.9 }}>Your kitchen is currently empty. Start by initializing your pantry with our curated sets.</p>
+                </div>
+                <button 
+                  onClick={() => nav('/pantry-setup')}
+                  style={{ 
+                    background: 'white', 
+                    color: '#6b8c42', 
+                    padding: '0.75rem 1.25rem', 
+                    borderRadius: '0.75rem', 
+                    fontWeight: 600, 
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  Setup My Pantry
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Top Stats */}
           <div className="grid-3">
             <StatCard
@@ -211,6 +242,52 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Kitchen Tools */}
+            <div className="card section">
+              <div className="section-head">
+                <h3 className="section-title">Kitchen Tools</h3>
+              </div>
+              <div className="tools-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0.5rem' }}>
+                <button 
+                  onClick={() => nav('/recipe-suggester')}
+                  className="tool-card"
+                  style={{ 
+                    background: 'rgba(99, 102, 241, 0.1)', 
+                    border: '1px solid rgba(99, 102, 241, 0.2)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    color: '#c7d2fe',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Sparkles size={24} style={{ marginBottom: '0.75rem', color: '#818cf8' }} />
+                  <div style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>Recipe Suggester</div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>What can I cook with what I have?</div>
+                </button>
+
+                <button 
+                  onClick={() => nav('/pantry-setup')}
+                  className="tool-card"
+                  style={{ 
+                    background: 'rgba(34, 197, 94, 0.1)', 
+                    border: '1px solid rgba(34, 197, 94, 0.2)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    color: '#bbf7d0',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <PlusSquare size={24} style={{ marginBottom: '0.75rem', color: '#4ade80' }} />
+                  <div style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>Pantry Setup</div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Reset or add baseline essentials.</div>
+                </button>
               </div>
             </div>
 

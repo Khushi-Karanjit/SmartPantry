@@ -1,0 +1,136 @@
+[
+  {
+    "_id": "69b25c69be7af9502f50e269",
+    "name": "Simple Fried Egg",
+    "description": "A quick and easy protein-packed meal.",
+    "cuisine": "Universal",
+    "diet": "Vegetarian",
+    "tags": [],
+    "prepMinutes": 5,
+    "calories": 150,
+    "servings": 1,
+    "ingredients": [
+      {
+        "name": "Eggs",
+        "quantity": 2,
+        "unit": "pcs",
+        "ingredientId": "69b25c68be7af9502f50e257"
+      },
+      {
+        "name": "Butter",
+        "quantity": 10,
+        "unit": "grams",
+        "ingredientId": "69b25c68be7af9502f50e25a"
+      }
+    ],
+    "steps": [
+      "Heat butter in a pan.",
+      "Crack eggs into the pan.",
+      "Fry until whites are set."
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=300",
+    "status": "published",
+    "views": 0,
+    "__v": 0,
+    "createdAt": "2026-03-12T06:25:45.134Z",
+    "updatedAt": "2026-03-12T06:25:45.134Z"
+  },
+  {
+    "_id": "69b25c69be7af9502f50e26a",
+    "name": "Nepali Dal Bhat",
+    "description": "The staple meal of Nepal - nutritious lentil soup with rice.",
+    "cuisine": "Nepali",
+    "diet": "Vegan",
+    "tags": [],
+    "prepMinutes": 40,
+    "calories": 600,
+    "servings": 2,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "quantity": 500,
+        "unit": "grams",
+        "ingredientId": "69b25c68be7af9502f50e25b"
+      },
+      {
+        "name": "Lentils",
+        "quantity": 200,
+        "unit": "grams",
+        "ingredientId": "69b25c68be7af9502f50e25c"
+      },
+      {
+        "name": "Turmeric",
+        "quantity": 1,
+        "unit": "tsp",
+        "ingredientId": "69b25c68be7af9502f50e25d"
+      },
+      {
+        "name": "Mustard Oil",
+        "quantity": 2,
+        "unit": "tbsp",
+        "ingredientId": "69b25c68be7af9502f50e25f"
+      }
+    ],
+    "steps": [
+      "Cook rice.",
+      "Boil lentils with turmeric until soft.",
+      "Heat oil and fry garlic (optional).",
+      "Combine and serve."
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1546039907-7fa05f864c02?q=80&w=300",
+    "status": "published",
+    "views": 0,
+    "__v": 0,
+    "createdAt": "2026-03-12T06:25:45.135Z",
+    "updatedAt": "2026-03-12T06:25:45.135Z"
+  },
+  {
+    "_id": "69b25c69be7af9502f50e26b",
+    "name": "Spaghetti Pomodoro",
+    "description": "Classic Italian pasta with a rich tomato sauce.",
+    "cuisine": "Italian",
+    "diet": "Vegetarian",
+    "tags": [],
+    "prepMinutes": 20,
+    "calories": 450,
+    "servings": 2,
+    "ingredients": [
+      {
+        "name": "Pasta",
+        "quantity": 250,
+        "unit": "grams",
+        "ingredientId": "69b25c68be7af9502f50e262"
+      },
+      {
+        "name": "Tomato Sauce",
+        "quantity": 400,
+        "unit": "ml",
+        "ingredientId": "69b25c68be7af9502f50e263"
+      },
+      {
+        "name": "Olive Oil",
+        "quantity": 1,
+        "unit": "tbsp",
+        "ingredientId": "69b25c68be7af9502f50e264"
+      },
+      {
+        "name": "Basil",
+        "quantity": 5,
+        "unit": "leaves",
+        "ingredientId": "69b25c68be7af9502f50e265"
+      }
+    ],
+    "steps": [
+      "Boil pasta until al dente.",
+      "Simmer tomato sauce in oil.",
+      "Toss pasta with sauce.",
+      "Top with basil."
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=300",
+    "status": "published",
+    "views": 0,
+    "__v": 0,
+    "createdAt": "2026-03-12T06:25:45.135Z",
+    "updatedAt": "2026-03-12T06:25:45.135Z"
+  }
+]

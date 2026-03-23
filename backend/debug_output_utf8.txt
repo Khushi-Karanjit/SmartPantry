@@ -1,0 +1,29 @@
+﻿[dotenv@17.2.3] injecting env (4) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+Total items for khushi: 27
+Chia Seeds: ID=69b25daae3ca9afd1bc5c755, IngName=chia seeds
+Almonds: ID=69b25daae3ca9afd1bc5c75f, IngName=almonds
+Olive Oil: ID=69b25c68be7af9502f50e264, IngName=olive oil
+Quinoa: ID=69b25dabe3ca9afd1bc5c769, IngName=quinoa
+Greek Yogurt: ID=69b25dabe3ca9afd1bc5c76d, IngName=greek yogurt
+Milk: ID=69b25c68be7af9502f50e258, IngName=milk
+basmati rice: ID=69b25dabe3ca9afd1bc5c773, IngName=basmati rice
+lentils (dal): ID=69b25dace3ca9afd1bc5c777, IngName=lentils (dal)
+mustard oil: ID=69b25c68be7af9502f50e25f, IngName=mustard oil
+turmeric powder: ID=69b25dace3ca9afd1bc5c77d, IngName=turmeric powder
+cumin seeds: ID=69b25dade3ca9afd1bc5c781, IngName=cumin seeds
+ginger: ID=69b25c68be7af9502f50e260, IngName=ginger
+garlic: ID=69b25c68be7af9502f50e261, IngName=garlic
+potatoes: ID=69b25dade3ca9afd1bc5c789, IngName=potatoes
+onions: ID=69b25daee3ca9afd1bc5c78d, IngName=onions
+green chilies: ID=69b25daee3ca9afd1bc5c791, IngName=green chilies
+rice: ID=69b25c68be7af9502f50e25b, IngName=rice
+pasta: ID=69b25c68be7af9502f50e262, IngName=pasta
+instant noodles: ID=69b25dafe3ca9afd1bc5c799, IngName=instant noodles
+eggs: ID=69b25c68be7af9502f50e257, IngName=eggs
+milk: ID=69b25c68be7af9502f50e258, IngName=milk
+cooking oil: ID=69b25db0e3ca9afd1bc5c7a1, IngName=cooking oil
+salt: ID=69b25db0e3ca9afd1bc5c7a5, IngName=salt
+sugar: ID=69b25db0e3ca9afd1bc5c7a9, IngName=sugar
+bread: ID=69b25c68be7af9502f50e256, IngName=bread
+tea bags: ID=69b25db1e3ca9afd1bc5c7af, IngName=tea bags
+eggs: ID=69b25c68be7af9502f50e257, IngName=eggs
