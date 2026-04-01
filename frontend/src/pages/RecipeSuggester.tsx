@@ -131,7 +131,7 @@ export default function RecipeSuggester() {
             </button>
 
             <div className="selected-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-               <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Selected ({selectedIngredients.length})</span>
+               <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Selected ({selectedIngredients.length})</span>
                {selectedIngredients.length > 0 && (
                  <button 
                     onClick={() => setSelectedIngredients([])}
@@ -152,7 +152,7 @@ export default function RecipeSuggester() {
                 </div>
               ))}
               {selectedIngredients.length === 0 && (
-                <p style={{ color: '#475569', fontSize: '0.9rem', fontStyle: 'italic', width: '100%', textAlign: 'center', marginTop: '1rem' }}>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic', width: '100%', textAlign: 'center', marginTop: '1rem' }}>
                   No ingredients selected yet.
                 </p>
               )}
@@ -190,7 +190,7 @@ export default function RecipeSuggester() {
                       <span><Flame size={14} /> {recipe.calories} kcal</span>
                       <span className="matched-ingredients">{recipe.matchedCount} ingredients matched</span>
                     </div>
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {recipe.description}
                     </p>
                     <div style={{ color: '#6366f1', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
@@ -204,8 +204,8 @@ export default function RecipeSuggester() {
                 {!loading && (
                   <>
                     <div className="empty-icon"><ChefHat size={64} /></div>
-                    <h3 style={{ color: '#f8fafc', marginBottom: '0.5rem' }}>Ready to Cook?</h3>
-                    <p style={{ color: '#94a3b8' }}>
+                    <h3 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>Ready to Cook?</h3>
+                    <p style={{ color: '#64748b' }}>
                       {selectedIngredients.length > 0 
                         ? "We couldn't find any recipes matching those ingredients. Try adding more or searching broader."
                         : "Select some ingredients on the left to see what you can make today!"}
@@ -215,7 +215,7 @@ export default function RecipeSuggester() {
                 {loading && (
                   <div style={{ padding: '2rem' }}>
                     <Loader2 className="spin" size={48} style={{ color: '#6366f1', marginBottom: '1rem' }} />
-                    <p style={{ color: '#f8fafc' }}>Searching our cookbook...</p>
+                    <p style={{ color: '#1e293b' }}>Searching our cookbook...</p>
                   </div>
                 )}
               </div>

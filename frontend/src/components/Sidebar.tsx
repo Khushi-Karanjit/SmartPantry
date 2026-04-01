@@ -42,6 +42,7 @@ export default function Sidebar({
     { label: "Recipes", path: "/recipes", icon: <BookOpen size={18} /> },
     { label: "Recipe Suggester", path: "/recipe-suggester", icon: <Sparkles size={18} /> },
     { label: "Meal Planner", path: "/meal-planner", icon: <CalendarDays size={18} /> },
+    { label: "Analytics", path: "/analytics", icon: <BarChart size={18} /> },
     { label: "Profile", path: "/profile", icon: <User size={18} /> },
   ];
 

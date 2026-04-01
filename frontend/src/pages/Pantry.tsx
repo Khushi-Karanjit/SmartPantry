@@ -1,10 +1,10 @@
 // frontend/src/pages/Pantry.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import "../styles/Pantry.css";
 import IngredientSearchSelect from "../components/IngredientSearchSelect";
-import type { Ingredient } from "../api/api";
+import Skeleton from "../components/Skeleton";
 import {
   Plus,
   Search,
@@ -16,35 +16,23 @@ import {
   Trash2,
   X,
   Loader2,
+  RotateCcw,
+  Eraser
 } from "lucide-react";
+import {
+  getPantryItemsApi,
+  addPantryItemApi,
+  updatePantryItemApi,
+  deletePantryItemApi,
+  getCategoriesApi,
+  cleanupExpiredPantryApi,
+  restockPantryItemApi,
+  type PantryItem,
+  type Category,
+  type Ingredient,
+  type PaginationMeta
+} from "../api/api";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-
-type Category = {
-  _id: string;
-  name: string;
-  shelfLifeDays: number;
-};
-
-type PantryItem = {
-  _id: string;
-  name: string;
-  ingredientId: string;
-
-  // Backend returns computed fields:
-  category: string;
-  shelfLifeDays?: number;
-
-  quantity: number;
-  unit: string;
-  expiryDate: string | null;
-  source?: "manual" | "preset";
-  presetKey?: string | null;
-};
-
-function getToken() {
-  return localStorage.getItem("token") || "";
-}
 
 function daysUntil(dateIso: string) {
   const now = new Date();
@@ -72,6 +60,9 @@ export default function Pantry() {
   const [tab, setTab] = useState<"all" | "student" | "nepali" | "italian">("all");
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All");
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -97,18 +88,8 @@ export default function Pantry() {
     try {
       setCatLoading(true);
       setError("");
-
-      const token = getToken();
-      if (!token) throw new Error("No token found. Please login again.");
-
-      const res = await fetch(`${API_BASE}/api/categories`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to load categories.");
-
-      setCategories(data.categories || []);
+      const res = await getCategoriesApi();
+      setCategories(res.categories || []);
     } catch (e: any) {
       setError(e?.message || "Failed to load categories.");
     } finally {
@@ -116,22 +97,19 @@ export default function Pantry() {
     }
   }
 
-  async function fetchItems() {
+  async function fetchItems(pageToFetch = page) {
     try {
       setLoading(true);
       setError("");
-
-      const token = getToken();
-      if (!token) throw new Error("No token found. Please login again.");
-
-      const res = await fetch(`${API_BASE}/api/pantry`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await getPantryItemsApi({
+        page: pageToFetch,
+        search: q,
+        category,
+        tab,
+        status
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to load pantry items.");
-
-      setItems(data.items || []);
+      setItems(res.items || []);
+      setPagination(res.pagination);
     } catch (e: any) {
       setError(e?.message || "Failed to load pantry items.");
     } finally {
@@ -141,9 +119,19 @@ export default function Pantry() {
 
   useEffect(() => {
     fetchCategories();
-    fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setPage(1); // Reset to page 1 on filter/search change
+    setStatus(""); // Clear status filter when other filters are touched
+    fetchItems(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, category, tab]);
+
+  useEffect(() => {
+    fetchItems(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, status]);
 
   useEffect(() => {
     if (!addForm.category && categories.length > 0) {
@@ -152,48 +140,18 @@ export default function Pantry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories]);
 
-  const expiringSoon = useMemo(() => {
-    return items.filter((i) => {
-      if (!i.expiryDate) return false;
-      const d = daysUntil(i.expiryDate);
-      return d >= 0 && d <= 2;
-    });
-  }, [items]);
 
-  const filtered = useMemo(() => {
-    let list = [...items];
-
-    if (tab !== "all") {
-      list = list.filter((x) => (x.presetKey || "") === tab);
-    }
-
-    if (q.trim()) {
-      const s = q.toLowerCase();
-      list = list.filter((x) => x.name.toLowerCase().includes(s));
-    }
-
-    if (category !== "All") {
-      list = list.filter((x) => (x.category || "Other") === category);
-    }
-
-    list.sort((a, b) => {
-      const ad = a.expiryDate ? new Date(a.expiryDate).getTime() : Number.POSITIVE_INFINITY;
-      const bd = b.expiryDate ? new Date(b.expiryDate).getTime() : Number.POSITIVE_INFINITY;
-      return ad - bd;
-    });
-
-    return list;
-  }, [items, tab, q, category]);
+  const filtered = items; // Backend handles filtering
 
   function openEditModal(it: PantryItem) {
     setEditId(it._id);
     setEditForm({
       category: it.category || addForm.category || "",
       ingredient: {
-        _id: it.ingredientId,
+        _id: it.ingredientId ?? "",
         name: it.name,
-        category: it.category,
-        defaultUnit: it.unit,
+        category: it.category ?? "",
+        defaultUnit: it.unit ?? "",
         shelfLifeDays: it.shelfLifeDays || 0,
         isCustom: false,
       },
@@ -213,24 +171,11 @@ export default function Pantry() {
         return;
       }
 
-      const token = getToken();
-      if (!token) throw new Error("No token found. Please login again.");
-
-      const res = await fetch(`${API_BASE}/api/pantry`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ingredientId: addForm.ingredient._id,
-          quantity: Number(addForm.quantity) || 1,
-          unit: addForm.unit || addForm.ingredient.defaultUnit || "pcs",
-        }),
+      await addPantryItemApi({
+        ingredientId: addForm.ingredient._id,
+        quantity: Number(addForm.quantity) || 1,
+        unit: addForm.unit || addForm.ingredient.defaultUnit || "pcs",
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to add item.");
 
       setOpenAdd(false);
       setAddForm({
@@ -240,7 +185,7 @@ export default function Pantry() {
         unit: "",
       });
 
-      await fetchItems();
+      await fetchItems(1); // Refresh page 1
     } catch (e: any) {
       setError(e?.message || "Failed to add item.");
     } finally {
@@ -260,28 +205,15 @@ export default function Pantry() {
         return;
       }
 
-      const token = getToken();
-      if (!token) throw new Error("No token found. Please login again.");
-
-      const res = await fetch(`${API_BASE}/api/pantry/${editId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ingredientId: editForm.ingredient._id,
-          quantity: Number(editForm.quantity) || 1,
-          unit: editForm.unit || editForm.ingredient.defaultUnit || "pcs",
-        }),
+      await updatePantryItemApi(editId, {
+        ingredientId: editForm.ingredient._id,
+        quantity: Number(editForm.quantity) || 1,
+        unit: editForm.unit || editForm.ingredient.defaultUnit || "pcs",
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to update item.");
 
       setOpenEdit(false);
       setEditId("");
-      await fetchItems();
+      await fetchItems(page);
     } catch (e: any) {
       setError(e?.message || "Failed to update item.");
     } finally {
@@ -297,22 +229,42 @@ export default function Pantry() {
       const ok = confirm("Delete this item? This cannot be undone.");
       if (!ok) return;
 
-      const token = getToken();
-      if (!token) throw new Error("No token found. Please login again.");
-
-      const res = await fetch(`${API_BASE}/api/pantry/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to delete item.");
-
-      await fetchItems();
+      await deletePantryItemApi(id);
+      await fetchItems(page);
     } catch (e: any) {
       setError(e?.message || "Failed to delete item.");
     } finally {
       setDeletingId("");
+    }
+  }
+
+  async function cleanupAll() {
+    try {
+      const expiredCount = items.filter(i => statusOf(i).kind === 'expired').length;
+      if (expiredCount === 0) return;
+
+      const ok = confirm(`Are you sure you want to remove all ${expiredCount} expired items?`);
+      if (!ok) return;
+
+      setLoading(true);
+      await cleanupExpiredPantryApi();
+      await fetchItems(1);
+    } catch (e: any) {
+      setError(e?.message || "Failed to cleanup items.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function restockItem(id: string) {
+    try {
+      setSaving(true);
+      await restockPantryItemApi(id);
+      await fetchItems(page);
+    } catch (e: any) {
+      setError(e?.message || "Failed to restock item.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -325,7 +277,15 @@ export default function Pantry() {
             <p className="pantry-sub">Track and manage your ingredients effectively.</p>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+               className="pantry-btn ghost"
+               onClick={cleanupAll}
+               disabled={loading || items.filter(i => statusOf(i).kind === 'expired').length === 0}
+               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444' }}
+            >
+               <Eraser size={16} /> Cleanup Expired
+            </button>
             <button
               className="pantry-btn ghost"
               onClick={() => window.location.href = '/recipe-suggester'}
@@ -363,7 +323,7 @@ export default function Pantry() {
           </button>
         </div>
 
-        {expiringSoon.length > 0 && (
+        {pagination?.expiringSoonCount ? (
           <div className="pantry-warning">
             <div className="warning-left">
               <div className="warning-icon">
@@ -372,13 +332,27 @@ export default function Pantry() {
               <div>
                 <div className="warning-title">Use Soon</div>
                 <div className="warning-sub">
-                  These {expiringSoon.length} items will expire within the next 48 hours.
+                  These {pagination.expiringSoonCount} items will expire within the next 48 hours.
                 </div>
               </div>
             </div>
-            <button className="warning-link" onClick={() => setQ("")}>Show Items</button>
+            <button 
+              className="warning-link" 
+              onClick={() => { setStatus("expiring"); setPage(1); }}
+            >
+              {status === "expiring" ? "Showing Expiring" : "Show Items"}
+            </button>
+            {status === "expiring" && (
+              <button 
+                className="warning-link" 
+                style={{ marginLeft: '10px', color: '#666' }}
+                onClick={() => setStatus("")}
+              >
+                Clear
+              </button>
+            )}
           </div>
-        )}
+        ) : null}
 
         <div className="pantry-controls card">
           <div className="search">
@@ -408,8 +382,36 @@ export default function Pantry() {
         {error && <div className="error">{error}</div>}
 
         {loading ? (
-          <div className="muted" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <Loader2 className="spin" size={16} /> Loading pantry items...
+          <div className="card pantry-table-wrap">
+            <table className="pantry-table">
+              <thead>
+                <tr>
+                  <th>INGREDIENT</th>
+                  <th>QUANTITY</th>
+                  <th>CATEGORY</th>
+                  <th>EXPIRY DATE</th>
+                  <th>STATUS</th>
+                  <th style={{ textAlign: "right" }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    <td><Skeleton width="120px" height="1rem" /></td>
+                    <td><Skeleton width="60px" height="1rem" /></td>
+                    <td><Skeleton width="80px" height="1.5rem" borderRadius="999px" /></td>
+                    <td><Skeleton width="90px" height="1rem" /></td>
+                    <td><Skeleton width="70px" height="1.5rem" borderRadius="999px" /></td>
+                    <td style={{ textAlign: "right" }}>
+                      <div className="actions">
+                        <Skeleton width="32px" height="32px" borderRadius="10px" />
+                        <Skeleton width="32px" height="32px" borderRadius="10px" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="card pantry-table-wrap">
@@ -443,6 +445,15 @@ export default function Pantry() {
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <div className="actions">
+                          <button 
+                            className="icon-btn" 
+                            onClick={(e) => { e.stopPropagation(); restockItem(it._id); }} 
+                            title="Restock (Reset Expiry)"
+                            style={st.kind === 'expired' ? { color: '#22c55e', backgroundColor: '#f0fdf4' } : {}}
+                            disabled={saving}
+                          >
+                            <RotateCcw size={16} />
+                          </button>
                           <button className="icon-btn" onClick={() => openEditModal(it)} title="Edit">
                             <Pencil size={16} />
                           </button>
@@ -469,6 +480,28 @@ export default function Pantry() {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="pagination">
+            <button 
+              disabled={page === 1} 
+              onClick={() => setPage(p => p - 1)}
+              className="page-btn"
+            >
+              Previous
+            </button>
+            <span className="page-info">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <button 
+              disabled={page === pagination.totalPages} 
+              onClick={() => setPage(p => p + 1)}
+              className="page-btn"
+            >
+              Next
+            </button>
           </div>
         )}
 

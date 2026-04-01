@@ -13,7 +13,7 @@ const PantryItemSchema = new mongoose.Schema(
     },
 
     // NEW: reference category (Option B)
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true, index: true },
 
     // Keep these if you already have them
     quantity: { type: Number, default: 1, min: 0 },

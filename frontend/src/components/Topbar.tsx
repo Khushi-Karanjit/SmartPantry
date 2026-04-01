@@ -1,5 +1,6 @@
-import { Menu, Bell } from "lucide-react";
+import { Menu } from "lucide-react";
 import { getUser } from "../auth/auth";
+import NotificationBell from "./NotificationBell";
 import "../styles/Dashboard.css";
 
 export default function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
@@ -22,9 +23,7 @@ export default function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         </div>
       </div>
 
-      <button className="icon-btn" aria-label="Notifications">
-        <Bell size={20} />
-      </button>
+      <NotificationBell />
     </div>
   );
 }

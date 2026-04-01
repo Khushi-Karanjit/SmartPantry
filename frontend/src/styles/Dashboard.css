@@ -358,3 +358,94 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Skeleton Loading ===== */
+.skeleton-loader {
+  background: rgba(0, 0, 0, 0.05); /* Default for light mode */
+  overflow: hidden;
+  position: relative;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .skeleton-loader {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+
+/* Kitchen Tools Redesign */
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-soft);
+}
+
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary);
+}
+
+.tool-card.purple {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.8) 0%, rgba(224, 231, 255, 0.8) 100%);
+}
+
+.tool-card.green {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.8) 0%, rgba(220, 252, 231, 0.8) 100%);
+}
+
+.tool-icon {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-card.purple .tool-icon { background: #e0e7ff; color: #4f46e5; }
+.tool-card.green .tool-icon { background: #dcfce7; color: #16a34a; }
+
+.tool-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.tool-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+}

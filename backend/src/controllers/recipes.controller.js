@@ -116,8 +116,16 @@ async function suggestRecipes(req, res, next) {
     })
     .filter(recipe => recipe.matchedCount > 0)
     .sort((a, b) => b.matchPercentage - a.matchPercentage || b.matchedCount - a.matchedCount);
-
     res.json({ recipes: suggested });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function listCuisines(req, res, next) {
+  try {
+    const cuisines = await Recipe.distinct("cuisine", { status: "published" });
+    res.json({ cuisines: cuisines.filter(Boolean).sort() });
   } catch (err) {
     next(err);
   }
@@ -131,5 +139,6 @@ module.exports = {
   deleteRecipe,
   toggleSaveRecipe,
   getSavedRecipes,
-  suggestRecipes
+  suggestRecipes,
+  listCuisines
 };

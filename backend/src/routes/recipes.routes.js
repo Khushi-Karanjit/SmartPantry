@@ -10,10 +10,12 @@ const {
   deleteRecipe,
   toggleSaveRecipe,
   getSavedRecipes,
-  suggestRecipes
+  suggestRecipes,
+  listCuisines
 } = require("../controllers/recipes.controller");
 
 router.get("/", requireAuth, listRecipes);
+router.get("/cuisines", requireAuth, listCuisines);
 router.get("/suggested", requireAuth, suggestRecipes);
 router.get("/saved", requireAuth, getSavedRecipes);
 router.get("/:id", requireAuth, getRecipe);

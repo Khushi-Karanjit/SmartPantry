@@ -4,14 +4,24 @@
 
 @layer base {
   :root {
-    color: #1c1c1c;
-    background-color: #fbfbf7;
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --bg-soft: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --primary: #93a676;
+    --radius-lg: 1.25rem;
+    --radius-md: 0.75rem;
+    --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.04);
+    
+    color: var(--text-primary);
+    background-color: var(--bg-soft);
+    font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
+    background-color: var(--bg-soft);
   }
 
   a {

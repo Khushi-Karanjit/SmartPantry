@@ -16,6 +16,8 @@ import {
   Trash2
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
+import Topbar from "../components/Topbar";
+import PageSkeleton from "../components/PageSkeleton";
 import { 
   getProfileApi, 
   updateProfileApi, 
@@ -105,22 +107,13 @@ export default function Profile() {
     }
   };
 
-  if (loading && !data) return (
-    <DashboardLayout topbar={() => <div className="topbar"><h1>Loading Profile...</h1></div>}>
-      <div className="admin-loading">Fetching your data...</div>
-    </DashboardLayout>
-  );
-
   return (
-    <DashboardLayout topbar={() => (
-      <div className="topbar">
-        <div className="topbar-left">
-          <h1>My Profile</h1>
-        </div>
-      </div>
-    )}>
-      <div className="admin-page-content">
-        <div className="admin-grid-2">
+    <DashboardLayout topbar={(openMenu) => <Topbar onOpenMenu={openMenu} />}>
+      {loading && !data ? (
+        <PageSkeleton cards={2} />
+      ) : (
+        <div className="admin-page-content">
+          <div className="admin-grid-2">
           {/* Left Column: Essential Info & Tabs */}
           <div className="profile-main-stack">
             <section className="card person-hero">
@@ -362,6 +355,7 @@ export default function Profile() {
           </div>
         </div>
       </div>
+      )}
     </DashboardLayout>
   );
 }

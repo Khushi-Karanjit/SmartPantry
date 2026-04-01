@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
-import PageSkeleton from "../components/PageSkeleton";
-import { getPantryItemsApi, listRecipesApi, listCuisinesApi, type PantryItem, type Recipe } from "../api/api";
-import "../styles/Recipes.css";
+import { getPantryItemsApi, listRecipesApi, type PantryItem, type Recipe } from "../api/api";
+import "../styles/recipes.css";
 
 type RecipeMatch = Recipe & { match: number };
 
@@ -30,29 +29,24 @@ function computeMatch(recipe: Recipe, pantrySet: Set<string>) {
 export default function Recipes() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [pantry, setPantry] = useState<PantryItem[]>([]);
-  const [cuisines, setCuisines] = useState<string[]>([]);
-  const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [servings, setServings] = useState(2);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [recipesRes, pantryRes, cuisinesRes] = await Promise.all([
+        const [recipesRes, pantryRes] = await Promise.all([
           listRecipesApi(),
           getPantryItemsApi(),
-          listCuisinesApi(),
         ]);
         if (!active) return;
         const list = recipesRes.recipes || [];
         setRecipes(list);
         setPantry(pantryRes.items || []);
-        setCuisines(cuisinesRes.cuisines || []);
         setSelectedId(list[0]?._id || null);
         setServings(list[0]?.servings || 2);
       } catch (e: any) {
@@ -78,20 +72,9 @@ export default function Recipes() {
 
   const filtered = useMemo(() => {
     const q = normalize(search);
-    return matches.filter((recipe) => {
-      const nameMatch = !q || normalize(recipe.name).includes(q);
-      const cuisineMatch = !selectedCuisine || recipe.cuisine === selectedCuisine;
-      return nameMatch && cuisineMatch;
-    });
-  }, [matches, search, selectedCuisine]);
-
-  useEffect(() => {
-    setVisibleCount(10); // Reset count on filter change
-  }, [search, selectedCuisine]);
-
-  const paged = useMemo(() => {
-    return filtered.slice(0, visibleCount);
-  }, [filtered, visibleCount]);
+    if (!q) return matches;
+    return matches.filter((recipe) => normalize(recipe.name).includes(q));
+  }, [matches, search]);
 
   const selected = useMemo(
     () => matches.find((recipe) => recipe._id === selectedId) || null,
@@ -123,37 +106,21 @@ export default function Recipes() {
           <div className="section-sub">Discover meals based on your pantry items.</div>
         </div>
 
-        {loading && <PageSkeleton cards={5} />}
+        {loading && <div className="section-body">Loading...</div>}
         {error && <div className="section-body">Error: {error}</div>}
 
         {!loading && !error && (
           <div className="browser-grid">
             <aside className="recipe-list">
-              <div className="recipe-filters">
-                <div className="recipe-search">
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search recipes..."
-                  />
-                </div>
-                <div className="recipe-cuisine">
-                  <select
-                    value={selectedCuisine}
-                    onChange={(e) => setSelectedCuisine(e.target.value)}
-                    className="cuisine-select"
-                  >
-                    <option value="">All Cuisines</option>
-                    {cuisines.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="recipe-search">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search recipes..."
+                />
               </div>
               <div className="recipe-stack">
-                {paged.map((recipe) => (
+                {filtered.map((recipe) => (
                   <button
                     key={recipe._id}
                     className={`recipe-row ${selectedId === recipe._id ? "active" : ""}`}
@@ -169,15 +136,6 @@ export default function Recipes() {
                     <span className="match-pill">{recipe.match}% Match</span>
                   </button>
                 ))}
-
-                {visibleCount < filtered.length && (
-                  <button 
-                    className="load-more-btn" 
-                    onClick={() => setVisibleCount(c => c + 10)}
-                  >
-                    Load More Recipes
-                  </button>
-                )}
               </div>
             </aside>
 

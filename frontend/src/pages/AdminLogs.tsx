@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 import { 
   ScrollText, 
-  ArrowLeft,
   Clock,
   User,
   ChefHat
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
+import Topbar from "../components/Topbar";
+import PageSkeleton from "../components/PageSkeleton";
 import { getAdminLogsApi } from "../api/api";
 import type { AdminCookingLog } from "../api/api";
 import "../styles/admin.css";
 
 export default function AdminLogs() {
-  const navigate = useNavigate();
   const [logs, setLogs] = useState<AdminCookingLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,17 +35,11 @@ export default function AdminLogs() {
   };
 
   return (
-    <DashboardLayout topbar={() => (
-      <div className="topbar">
-        <div className="topbar-left">
-          <button className="icon-btn" onClick={() => navigate("/admin")}>
-            <ArrowLeft size={20} />
-          </button>
-          <h1>Cooking Activity Logs</h1>
-        </div>
-      </div>
-    )}>
-      <div className="admin-page-content">
+    <DashboardLayout topbar={(openMenu) => <Topbar onOpenMenu={openMenu} />}>
+      {loading && logs.length === 0 ? (
+        <PageSkeleton cards={5} />
+      ) : (
+        <div className="admin-page-content">
         <section className="card admin-section">
           <div className="section-head">
             <h3 className="section-title"><ScrollText size={18} /> System-Wide Activities</h3>
@@ -62,7 +55,6 @@ export default function AdminLogs() {
               <div style={{ textAlign: 'right' }}>Time</div>
             </div>
 
-            {loading && logs.length === 0 && <div className="admin-loading">Loading history...</div>}
             {!loading && logs.length === 0 && <div className="admin-empty">No activity recorded yet.</div>}
 
             {logs.map((log) => (
@@ -89,6 +81,7 @@ export default function AdminLogs() {
           </div>
         </section>
       </div>
+      )}
     </DashboardLayout>
   );
 }

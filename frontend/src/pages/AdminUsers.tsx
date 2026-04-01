@@ -4,11 +4,11 @@ import {
   UserX, 
   UserCheck, 
   Trash2, 
-  ArrowLeft,
   Users
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
+import Topbar from "../components/Topbar";
+import PageSkeleton from "../components/PageSkeleton";
 import { 
   getAdminUsersApi, 
   toggleUserStatusApi, 
@@ -18,7 +18,6 @@ import type { AdminUser } from "../api/api";
 import "../styles/admin.css";
 
 export default function AdminUsers() {
-  const navigate = useNavigate();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -61,17 +60,11 @@ export default function AdminUsers() {
   };
 
   return (
-    <DashboardLayout topbar={() => (
-      <div className="topbar">
-        <div className="topbar-left">
-          <button className="icon-btn" onClick={() => navigate("/admin")}>
-            <ArrowLeft size={20} />
-          </button>
-          <h1>User Management</h1>
-        </div>
-      </div>
-    )}>
-      <div className="admin-page-content">
+    <DashboardLayout topbar={(openMenu) => <Topbar onOpenMenu={openMenu} />}>
+      {loading && users.length === 0 ? (
+        <PageSkeleton cards={5} />
+      ) : (
+        <div className="admin-page-content">
         <section className="card admin-section">
           <div className="section-head">
             <h3 className="section-title"><Users size={18} /> Community Directory</h3>
@@ -97,7 +90,6 @@ export default function AdminUsers() {
               <div style={{ textAlign: 'right' }}>Actions</div>
             </div>
 
-            {loading && users.length === 0 && <div className="admin-loading">Loading users...</div>}
             {!loading && users.length === 0 && <div className="admin-empty">No users found.</div>}
 
             {users.map((user) => (
@@ -137,6 +129,7 @@ export default function AdminUsers() {
           </div>
         </section>
       </div>
+      )}
     </DashboardLayout>
   );
 }

@@ -16,6 +16,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminLogs from "./pages/AdminLogs";
 import Profile from "./pages/Profile";
 import RecipeSuggester from "./pages/RecipeSuggester";
+import Analytics from "./pages/Analytics";
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
         <Route path="/recipe-suggester" element={<ProtectedRoute><RecipeSuggester /></ProtectedRoute>} />
         <Route path="/meal-planner" element={<ProtectedRoute><MealPlanner /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>

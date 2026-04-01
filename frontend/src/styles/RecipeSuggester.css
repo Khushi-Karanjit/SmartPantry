@@ -28,7 +28,7 @@
 }
 
 .suggester-sub {
-  color: #94a3b8;
+  color: #475569;
   font-size: 1.1rem;
 }
 
@@ -45,14 +45,15 @@
 }
 
 .selection-panel {
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 1.5rem;
   padding: 1.5rem;
   height: fit-content;
   position: sticky;
   top: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
 }
 
 .panel-title {
@@ -62,7 +63,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #f8fafc;
+  color: #1e293b;
 }
 
 .selected-list {
@@ -75,9 +76,9 @@
 }
 
 .ingredient-chip {
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #4f46e5;
   padding: 0.5rem 1rem;
   border-radius: 9999px;
   display: flex;
@@ -101,7 +102,7 @@
 .remove-chip {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   display: flex;
   padding: 2px;
@@ -153,8 +154,8 @@
 }
 
 .recipe-card-suggested {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 1.5rem;
   overflow: hidden;
   display: flex;
@@ -162,12 +163,14 @@
   transition: all 0.3s;
   cursor: pointer;
   position: relative;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
 .recipe-card-suggested:hover {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(99, 102, 241, 0.4);
+  background: #ffffff;
+  border-color: rgba(99, 102, 241, 0.3);
   transform: translateX(10px);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.08);
 }
 
 .recipe-img {
@@ -184,14 +187,14 @@
 .recipe-name {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: #1e293b;
   margin-bottom: 0.5rem;
 }
 
 .recipe-meta {
   display: flex;
   gap: 1rem;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -237,12 +240,12 @@
 .empty-results {
   text-align: center;
   padding: 4rem 2rem;
-  background: rgba(30, 41, 59, 0.3);
+  background: rgba(255, 255, 255, 0.4);
   border-radius: 1.5rem;
-  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(0, 0, 0, 0.1);
 }
 
 .empty-icon {
-  color: #475569;
+  color: #94a3b8;
   margin-bottom: 1rem;
 }

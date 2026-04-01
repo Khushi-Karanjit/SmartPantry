@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
+import DashboardSkeleton from "../components/DashboardSkeleton";
+import { getDashboardSummaryApi } from "../api/api";
+import type { DashboardSummary } from "../api/api";
 import "../styles/Dashboard.css";
 import {
   CheckCircle2,
@@ -15,54 +18,6 @@ import {
   Sparkles,
   PlusSquare
 } from "lucide-react";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-
-type DashboardSummary = {
-  stats: {
-    totalItems: number;
-    expiringSoonCount: number;
-    capacityUsedPercent: number;
-    mealsPlannedToday: number;
-  };
-  reminders: {
-    type: "expired" | "expiring" | "low";
-    text: string;
-    meta: string | null;
-  }[];
-  composition: {
-    category: string;
-    count: number;
-    percent: number;
-  }[];
-};
-
-function getToken(): string {
-  return localStorage.getItem("token") || "";
-}
-
-async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  const token = getToken();
-
-  if (!token) {
-    throw new Error("Login required. Token not found.");
-  }
-
-  const res = await fetch(`${API_BASE}/api/dashboard/summary`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (${res.status})`);
-  }
-
-  return data as DashboardSummary;
-}
 
 function formatRelative(metaIso: string) {
   const d = new Date(metaIso);
@@ -98,7 +53,7 @@ export default function Dashboard() {
       try {
         setLoading(true);
         setError("");
-        const summary = await fetchDashboardSummary();
+        const summary = await getDashboardSummaryApi();
         if (alive) setData(summary);
       } catch (e: any) {
         if (alive) setError(e?.message || "Failed to load dashboard");
@@ -121,14 +76,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout topbar={(openMenu) => <Topbar onOpenMenu={openMenu} />}>
-      {loading && (
-        <div className="card section">
-          <div className="section-head">
-            <h3 className="section-title">Dashboard</h3>
-          </div>
-          <div className="section-body">Loading...</div>
-        </div>
-      )}
+      {loading && <DashboardSkeleton />}
 
       {!loading && error && (
         <div className="card section">
@@ -250,43 +198,27 @@ export default function Dashboard() {
               <div className="section-head">
                 <h3 className="section-title">Kitchen Tools</h3>
               </div>
-              <div className="tools-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0.5rem' }}>
+              <div className="tools-grid">
                 <button 
                   onClick={() => nav('/recipe-suggester')}
-                  className="tool-card"
-                  style={{ 
-                    background: 'rgba(99, 102, 241, 0.1)', 
-                    border: '1px solid rgba(99, 102, 241, 0.2)',
-                    borderRadius: '1rem',
-                    padding: '1.25rem',
-                    color: '#c7d2fe',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
+                  className="tool-card purple"
                 >
-                  <Sparkles size={24} style={{ marginBottom: '0.75rem', color: '#818cf8' }} />
-                  <div style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>Recipe Suggester</div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>What can I cook with what I have?</div>
+                  <div className="tool-icon">
+                    <Sparkles size={24} />
+                  </div>
+                  <div className="tool-name">Recipe Suggester</div>
+                  <div className="tool-desc">What can I cook with what I have?</div>
                 </button>
 
                 <button 
                   onClick={() => nav('/pantry-setup')}
-                  className="tool-card"
-                  style={{ 
-                    background: 'rgba(34, 197, 94, 0.1)', 
-                    border: '1px solid rgba(34, 197, 94, 0.2)',
-                    borderRadius: '1rem',
-                    padding: '1.25rem',
-                    color: '#bbf7d0',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
+                  className="tool-card green"
                 >
-                  <PlusSquare size={24} style={{ marginBottom: '0.75rem', color: '#4ade80' }} />
-                  <div style={{ fontWeight: 600, fontSize: '1rem', color: 'white' }}>Pantry Setup</div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Reset or add baseline essentials.</div>
+                  <div className="tool-icon">
+                    <PlusSquare size={24} />
+                  </div>
+                  <div className="tool-name">Pantry Setup</div>
+                  <div className="tool-desc">Reset or add baseline essentials.</div>
                 </button>
               </div>
             </div>

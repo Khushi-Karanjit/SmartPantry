@@ -68,6 +68,10 @@ export type PantryItem = {
   unit: string;
   ingredientId: string;
   category: string;
+  shelfLifeDays?: number;
+  expiryDate?: string | null;
+  source?: "manual" | "preset";
+  presetKey?: string | null;
 };
 
 export type Ingredient = {
@@ -149,6 +153,62 @@ export type AdminCookingLog = {
 export type AdminAnalytics = {
   mostCooked: { name: string; count: number }[];
   ingredientStats: { name: string; count: number }[];
+};
+
+export type UserAnalytics = {
+  pantryComposition: { name: string; value: number }[];
+  nutritionHistory: { 
+    date: string; 
+    calories: number; 
+    protein: number; 
+    carbs: number; 
+    fat: number; 
+    count: number; 
+  }[];
+  targets: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+};
+
+export type PaginationMeta = {
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+  expiringSoonCount: number; // Added for the Use Soon warning
+};
+
+export type Notification = {
+  _id: string;
+  title: string;
+  message: string;
+  type: "expiry" | "low_stock" | "info" | "system";
+  priority: "low" | "medium" | "high";
+  isRead: boolean;
+  link?: string;
+  createdAt: string;
+};
+
+export type DashboardSummary = {
+  stats: {
+    totalItems: number;
+    expiringSoonCount: number;
+    capacityUsedPercent: number;
+    mealsPlannedToday: number;
+  };
+  reminders: {
+    type: "expired" | "expiring" | "low";
+    text: string;
+    meta: string | null;
+  }[];
+  composition: {
+    category: string;
+    count: number;
+    percent: number;
+  }[];
 };
 
 /* =========================
@@ -273,6 +333,10 @@ export function listRecipesApi() {
   return request<{ recipes: Recipe[] }>("/recipes", { method: "GET" });
 }
 
+export function listCuisinesApi() {
+  return request<{ cuisines: string[] }>("/recipes/cuisines", { method: "GET" });
+}
+
 export function getRecipeApi(id: string) {
   return request<{ recipe: Recipe }>(`/recipes/${id}`, { method: "GET" });
 }
@@ -336,9 +400,63 @@ export function getCurrentShoppingListApi() {
   );
 }
 
-export function getPantryItemsApi() {
-  return request<{ items: PantryItem[] }>("/pantry", { method: "GET" });
+export function getPantryItemsApi(params?: { 
+  page?: number; 
+  limit?: number; 
+  search?: string; 
+  category?: string;
+  tab?: string;
+  status?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.page) query.append("page", params.page.toString());
+  if (params?.limit) query.append("limit", params.limit.toString());
+  if (params?.search) query.append("search", params.search);
+  if (params?.category) query.append("category", params.category);
+  if (params?.tab) query.append("tab", params.tab);
+  if (params?.status) query.append("status", params.status);
+  
+  const queryString = query.toString();
+  const url = `/pantry${queryString ? `?${queryString}` : ""}`;
+  
+  return request<{ items: PantryItem[]; pagination: PaginationMeta }>(url, { method: "GET" });
 }
+
+export function addPantryItemApi(payload: { ingredientId: string; quantity: number; unit: string }) {
+  return request<{ item: PantryItem }>("/pantry", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updatePantryItemApi(id: string, payload: { ingredientId: string; quantity: number; unit: string }) {
+  return request<{ item: PantryItem }>(`/pantry/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deletePantryItemApi(id: string) {
+  return request<{ ok: boolean }>(`/pantry/${id}`, { method: "DELETE" });
+}
+
+export function cleanupExpiredPantryApi() {
+  return request<{ message: string; count: number }>("/pantry/cleanup", { method: "DELETE" });
+}
+
+export function restockPantryItemApi(id: string) {
+  return request<{ message: string; item: PantryItem }>(`/pantry/${id}/restock`, { method: "PATCH" });
+}
+
+export function getCategoriesApi() {
+  return request<{ categories: Category[] }>("/categories", { method: "GET" });
+}
+
+export type Category = {
+  _id: string;
+  name: string;
+  shelfLifeDays: number;
+};
 
 export function searchIngredientsApi(params: {
   q?: string;
@@ -414,4 +532,32 @@ export function getAdminLogsApi() {
 
 export function getAdminAnalyticsApi() {
   return request<AdminAnalytics>("/admin/analytics", { method: "GET" });
+}
+
+export function getUserAnalyticsApi() {
+  return request<UserAnalytics>("/analytics/me", { method: "GET" });
+}
+
+export function getDashboardSummaryApi() {
+  return request<DashboardSummary>("/dashboard/summary", { method: "GET" });
+}
+
+/* =========================
+   Notification APIs
+   ========================= */
+
+export function getNotificationsApi() {
+  return request<{ notifications: Notification[] }>("/notifications", { method: "GET" });
+}
+
+export function markNotificationAsReadApi(id: string) {
+  return request<{ notification: Notification }>(`/notifications/${id}/read`, { method: "PATCH" });
+}
+
+export function markAllNotificationsAsReadApi() {
+  return request<{ message: string }>("/notifications/read-all", { method: "PATCH" });
+}
+
+export function deleteNotificationApi(id: string) {
+  return request<{ ok: boolean }>(`/notifications/${id}`, { method: "DELETE" });
 }

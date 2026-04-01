@@ -15,8 +15,18 @@ function computeExpiryIso(baseDate, shelfLifeDays) {
 }
 
 /**
+ * Helper to calculate days from now until a date.
+ */
+function daysUntil(dateIso) {
+  if (!dateIso) return 0;
+  const now = new Date();
+  const d = new Date(dateIso);
+  const ms = d.getTime() - now.getTime();
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+/**
  * GET /api/pantry/presets
- * Returns preset templates (still used for Pantry Setup page).
  */
 async function getPresets(req, res) {
   try {
@@ -30,48 +40,28 @@ async function getPresets(req, res) {
 
 /**
  * POST /api/pantry/initialize
- * body: { presetKey: "student" | "nepali" | ... }
- *
- * Option B: categories have fixed shelf life in Category collection.
- * Preset items should include category name; we map it to categoryId.
  */
 async function initializePantry(req, res) {
   try {
     const { presetKey } = req.body;
-
-    if (!presetKey) {
-      return res.status(400).json({ message: "presetKey is required" });
-    }
-
-    const userId = req.userId; // from middleware
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!presetKey) return res.status(400).json({ message: "presetKey is required" });
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const preset = await PantryPreset.findOne({ key: presetKey }).lean();
-    if (!preset) {
-      return res.status(404).json({ message: "Preset not found" });
-    }
+    if (!preset) return res.status(404).json({ message: "Preset not found" });
 
-    // SMART MERGE: Get existing items for this user to avoid duplicates
     const existingPantryItems = await PantryItem.find({ userId }).select("ingredientId").lean();
-    const existingIngredientIds = new Set(
-      existingPantryItems
-        .filter((it) => it.ingredientId)
-        .map((it) => it.ingredientId.toString())
-    );
+    const existingIngredientIds = new Set(existingPantryItems.filter(it => it.ingredientId).map(it => it.ingredientId.toString()));
 
-    // Build a category name -> _id map once for faster inserts
     const cats = await Category.find().lean();
-    const catMap = new Map(cats.map((c) => [String(c.name).toLowerCase(), c._id]));
+    const catMap = new Map(cats.map(c => [String(c.name).toLowerCase(), c._id]));
     const otherId = catMap.get("other") || null;
 
     const docs = [];
-
     for (const it of preset.items || []) {
       const catName = String(it.category || "Other");
       const categoryId = catMap.get(catName.toLowerCase()) || otherId;
-
       if (!categoryId) continue;
 
       const normalizedName = String(it.name || "").trim().toLowerCase();
@@ -92,15 +82,7 @@ async function initializePantry(req, res) {
         { new: true, upsert: true }
       );
 
-      if (!ingredient) {
-        console.warn(`[initializePantry] Could not resolve ingredient: ${normalizedName}`);
-        continue;
-      }
-
-      // Skip if this ingredient is already in the user's pantry
-      if (existingIngredientIds.has(ingredient._id.toString())) {
-        continue;
-      }
+      if (!ingredient || existingIngredientIds.has(ingredient._id.toString())) continue;
 
       docs.push({
         userId,
@@ -115,68 +97,123 @@ async function initializePantry(req, res) {
       });
     }
 
-    // Guard: if you have no "Other" category seeded, this will fail
-    // because categoryId is required. Better to error clearly:
-    if (docs.some((d) => !d.categoryId)) {
-      return res.status(400).json({
-        message:
-          'Category mapping failed. Ensure categories are seeded (including "Other") and preset items use valid category names.',
-      });
-    }
-
-    if (docs.length > 0) {
-      console.log(`[initializePantry] Attempting to insert ${docs.length} items for user ${userId}`);
-      await PantryItem.insertMany(docs);
-    } else {
-      console.log(`[initializePantry] No new items to insert for user ${userId}`);
-    }
-
-    return res.status(201).json({
-      message: "Pantry initialized successfully",
-      count: docs.length,
-    });
+    if (docs.length > 0) await PantryItem.insertMany(docs);
+    return res.status(201).json({ message: "Pantry initialized successfully", count: docs.length });
   } catch (err) {
-    console.error("[initializePantry] Error:", err);
-    return res.status(500).json({ 
-      message: "Failed to initialize pantry",
-      error: err.message 
-    });
+    console.error(err);
+    return res.status(500).json({ message: "Failed to initialize pantry" });
   }
 }
 
 /**
  * GET /api/pantry
- * List items for the logged-in user.
- * Returns computed expiryDate based on Category.shelfLifeDays and PantryItem.addedAt.
+ * List items for the logged-in user with pagination and filtering.
  */
 async function getPantryItems(req, res) {
   try {
     const userId = req.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const items = await PantryItem.find({ userId })
+    // Pagination & Filtering Params
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit) || 10);
+    const search = (req.query.search || "").trim();
+    const category = (req.query.category || "All").trim();
+    const tab = (req.query.tab || "all").trim();
+    // Get Total Expiring Count (for the warning box)
+    const allItems = await PantryItem.find({ userId })
       .populate("categoryId")
       .populate("ingredientId")
-      .sort({ addedAt: -1, createdAt: -1 })
       .lean();
-
-    const mapped = items.map((it) => {
+    
+    const mappedAll = allItems.map(it => {
       const cat = it.categoryId || {};
       const ingredient = it.ingredientId || {};
-      const shelfLifeDays = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
+      const shelfLife = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
       const base = it.addedAt || it.createdAt || new Date();
-
-      return {
-        ...it,
-        ingredientId: ingredient._id ? ingredient._id.toString() : it.ingredientId,
-        name: ingredient.name || it.name,
-        category: ingredient.category || cat.name || "Other",
-        shelfLifeDays,
-        expiryDate: computeExpiryIso(base, shelfLifeDays),
-      };
+      return { _id: it._id, expiryDate: computeExpiryIso(base, shelfLife) };
     });
 
-    return res.json({ items: mapped });
+    const expiringSoonTotal = mappedAll.filter(it => {
+      const d = daysUntil(it.expiryDate);
+      return d >= 0 && d <= 2;
+    }).length;
+
+    // Build Query
+    let query = { userId };
+    const status = (req.query.status || "").trim();
+
+    // If a specific status is requested (expiring/expired), we might need to filter the mapped results
+    // For now, let's keep search/category query as is
+    if (tab !== "all") query.presetKey = tab;
+    if (search) query.name = { $regex: search, $options: "i" };
+    if (category !== "All") {
+      const catDoc = await Category.findOne({ name: category });
+      if (catDoc) query.categoryId = catDoc._id;
+    }
+
+    // Fetch and Map for current page
+    let finalItems = [];
+    let totalCount = 0;
+
+    if (status === "expiring") {
+      // Special case: we filter the FULL Mapped results by expiration
+      // Then we paginate that array. (Good for smaller pantries)
+      const fullMapped = allItems.map((it) => {
+        const cat = it.categoryId || {};
+        const ingredient = it.ingredientId || {};
+        const shelfLife = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
+        const base = it.addedAt || it.createdAt || new Date();
+        return {
+          ...it,
+          name: ingredient.name || it.name,
+          category: ingredient.category || cat.name || "Other",
+          expiryDate: computeExpiryIso(base, shelfLife),
+        };
+      }).filter(it => {
+        const d = daysUntil(it.expiryDate);
+        return d >= 0 && d <= 2;
+      });
+
+      totalCount = fullMapped.length;
+      finalItems = fullMapped.slice((page - 1) * limit, page * limit);
+    } else {
+      // Normal paginated query
+      totalCount = await PantryItem.countDocuments(query);
+      const items = await PantryItem.find(query)
+        .populate("categoryId")
+        .populate("ingredientId")
+        .sort({ addedAt: -1, createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+
+      finalItems = items.map((it) => {
+        const cat = it.categoryId || {};
+        const ingredient = it.ingredientId || {};
+        const shelfLife = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
+        const base = it.addedAt || it.createdAt || new Date();
+        return {
+          ...it,
+          name: ingredient.name || it.name,
+          category: ingredient.category || cat.name || "Other",
+          expiryDate: computeExpiryIso(base, shelfLife),
+        };
+      });
+    }
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return res.json({ 
+      items: finalItems,
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage: page,
+        limit,
+        expiringSoonCount: expiringSoonTotal
+      }
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to load pantry items" });
@@ -185,45 +222,28 @@ async function getPantryItems(req, res) {
 
 /**
  * POST /api/pantry
- * body: { name, categoryId, quantity, unit }
- * No per-item expiry input.
  */
 async function addPantryItem(req, res) {
   try {
     const userId = req.userId;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
     const { ingredientId, quantity, unit } = req.body;
-
-    if (!ingredientId) {
-      return res.status(400).json({ message: "ingredientId is required" });
-    }
+    if (!ingredientId) return res.status(400).json({ message: "ingredientId is required" });
 
     const ingredient = await Ingredient.findById(ingredientId).lean();
-    if (!ingredient) {
-      return res.status(400).json({ message: "Invalid ingredientId" });
-    }
+    if (!ingredient) return res.status(400).json({ message: "Invalid ingredientId" });
 
     const categoryDoc = await Category.findOne({ name: ingredient.category }).lean();
-    if (!categoryDoc) {
-      return res.status(400).json({ message: "Invalid ingredient category" });
-    }
-
     const q = Number(quantity ?? 1);
-    if (Number.isNaN(q) || q < 0) {
-      return res.status(400).json({ message: "Quantity must be a non-negative number" });
-    }
 
     const item = await PantryItem.create({
       userId,
       name: ingredient.name,
       ingredientId: ingredient._id,
-      categoryId: categoryDoc._id,
+      categoryId: categoryDoc?._id,
       quantity: q,
       unit: unit || ingredient.defaultUnit || "pcs",
       addedAt: new Date(),
       source: "manual",
-      presetKey: null,
     });
 
     return res.status(201).json({ item });
@@ -235,56 +255,28 @@ async function addPantryItem(req, res) {
 
 /**
  * PATCH /api/pantry/:id
- * body can include: { name, categoryId, quantity, unit }
- * No expiryDate here; expiry is computed.
  */
 async function updatePantryItem(req, res) {
   try {
     const userId = req.userId;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
     const { id } = req.params;
     const { ingredientId, quantity, unit } = req.body;
 
     const update = {};
-
     if (ingredientId !== undefined) {
       const ingredient = await Ingredient.findById(ingredientId).lean();
       if (!ingredient) return res.status(400).json({ message: "Invalid ingredientId" });
       const categoryDoc = await Category.findOne({ name: ingredient.category }).lean();
-      if (!categoryDoc) {
-        return res.status(400).json({ message: "Invalid ingredient category" });
-      }
       update.ingredientId = ingredient._id;
       update.name = ingredient.name;
-      update.categoryId = categoryDoc._id;
-      if (unit === undefined) {
-        update.unit = ingredient.defaultUnit || "pcs";
-      }
+      update.categoryId = categoryDoc?._id;
+      if (unit === undefined) update.unit = ingredient.defaultUnit || "pcs";
     }
+    if (quantity !== undefined) update.quantity = Number(quantity);
+    if (unit !== undefined) update.unit = unit;
 
-    if (quantity !== undefined) {
-      const q = Number(quantity);
-      if (Number.isNaN(q) || q < 0) {
-        return res.status(400).json({ message: "Quantity must be a non-negative number" });
-      }
-      update.quantity = q;
-    }
-
-    if (unit !== undefined) {
-      update.unit = unit || "pcs";
-    }
-
-    const item = await PantryItem.findOneAndUpdate(
-      { _id: id, userId },
-      { $set: update },
-      { new: true }
-    );
-
-    if (!item) {
-      return res.status(404).json({ message: "Item not found" });
-    }
-
+    const item = await PantryItem.findOneAndUpdate({ _id: id, userId }, { $set: update }, { new: true });
+    if (!item) return res.status(404).json({ message: "Item not found" });
     return res.json({ item });
   } catch (err) {
     console.error(err);
@@ -298,19 +290,56 @@ async function updatePantryItem(req, res) {
 async function deletePantryItem(req, res) {
   try {
     const userId = req.userId;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
     const { id } = req.params;
-
     const deleted = await PantryItem.findOneAndDelete({ _id: id, userId }).lean();
-    if (!deleted) {
-      return res.status(404).json({ message: "Item not found" });
-    }
-
+    if (!deleted) return res.status(404).json({ message: "Item not found" });
     return res.json({ message: "Item deleted" });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to delete pantry item" });
+  }
+}
+
+/**
+ * DELETE /api/pantry/cleanup
+ */
+async function cleanupExpiredItems(req, res) {
+  try {
+    const userId = req.userId;
+    const items = await PantryItem.find({ userId }).populate("categoryId").populate("ingredientId").lean();
+    const now = new Date();
+    const expiredIds = items.filter(it => {
+      const cat = it.categoryId || {};
+      const ing = it.ingredientId || {};
+      const shelfLife = ing.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
+      const base = it.addedAt || it.createdAt || new Date();
+      const expiry = new Date(base);
+      expiry.setDate(expiry.getDate() + Number(shelfLife));
+      return expiry < now;
+    }).map(it => it._id);
+
+    if (expiredIds.length === 0) return res.json({ message: "No expired items found", count: 0 });
+    const deleted = await PantryItem.deleteMany({ _id: { $in: expiredIds }, userId });
+    return res.json({ message: `Cleaned up ${deleted.deletedCount} expired items`, count: deleted.deletedCount });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to cleanup items" });
+  }
+}
+
+/**
+ * PATCH /api/pantry/:id/restock
+ */
+async function restockPantryItem(req, res) {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+    const item = await PantryItem.findOneAndUpdate({ _id: id, userId }, { $set: { addedAt: new Date() } }, { new: true });
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    return res.json({ message: "Item restocked successfully", item });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to restock item" });
   }
 }
 
@@ -321,5 +350,6 @@ module.exports = {
   addPantryItem,
   updatePantryItem,
   deletePantryItem,
+  cleanupExpiredItems,
+  restockPantryItem,
 };
-

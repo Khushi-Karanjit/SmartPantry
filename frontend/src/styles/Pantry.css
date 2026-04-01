@@ -141,8 +141,53 @@
 .ingredient-meta { font-size: 11px; opacity: 0.7; }
 .ingredient-item.add-custom { font-weight: 700; color: #4a5840; }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.page-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #4a5840;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #f8f9f5;
+  border-color: #9fb08a;
+  transform: translateY(-1px);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.page-info {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5840;
+  opacity: 0.8;
+}
+
 @media (max-width: 760px) {
   .search { min-width: 100%; }
   .search input { width: 100%; }
   .modal-grid { grid-template-columns: 1fr; }
+  .pantry-head { flex-direction: column; align-items: stretch; }
+  .actions { width: 100%; justify-content: flex-end; }
 }

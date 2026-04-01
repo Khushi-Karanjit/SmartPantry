@@ -33,7 +33,9 @@ async function searchIngredients(req, res, next) {
     const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(50, limitRaw)) : 10;
 
     const query = {};
-    if (category) query.category = category;
+    if (category && category.toLowerCase() !== "all") {
+      query.category = category;
+    }
     if (!includeCustom) query.isCustom = false;
 
     if (qRaw) {

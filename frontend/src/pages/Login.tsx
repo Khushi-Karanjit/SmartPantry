@@ -95,7 +95,7 @@ export default function Login() {
           {note && <div style={{ marginTop: 10, fontSize: 13, color: "#2b2b2b" }}>{note}</div>}
           {err && <div className="err">{err}</div>}
 
-          <button className="primary-btn" disabled={loading}>
+          <button className={`primary-btn ${loading ? "loading" : ""}`} disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>

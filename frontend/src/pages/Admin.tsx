@@ -19,6 +19,7 @@ import {
   Utensils,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
+import PageSkeleton from "../components/PageSkeleton";
 import { getUser } from "../auth/auth";
 import {
   getAdminStatsApi,
@@ -111,7 +112,7 @@ export default function Admin() {
   if (loading && !stats) {
     return (
       <DashboardLayout topbar={(openMenu) => <AdminTopbar onOpenMenu={openMenu} />}>
-        <div className="admin-loading">Loading admin dashboard...</div>
+        <PageSkeleton cards={4} />
       </DashboardLayout>
     );
   }

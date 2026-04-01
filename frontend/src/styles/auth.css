@@ -99,6 +99,17 @@ input:focus {
   color: white;
   font-weight: 700;
   font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.primary-btn.loading {
+  background: #aab696;
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.primary-btn:disabled {
+  cursor: not-allowed;
 }
 
 .footer-link {
