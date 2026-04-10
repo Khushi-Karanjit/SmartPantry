@@ -25,8 +25,14 @@ export type Recipe = {
   calories: number;
   servings: number;
   ingredients: { name: string; quantity: number; unit: string; ingredientId: string }[];
-  steps: string[];
+  steps: { text: string; startTime: number }[];
   imageUrl: string;
+  videoUrl?: string;
+  mealType: string;
+  protein: number;
+  carbs: number;
+  fat: number;
+  status: string;
   views?: number;
   matchPercentage?: number;
   matchedCount?: number;
@@ -44,6 +50,11 @@ export type Preferences = {
   proteinTarget: number;
   carbsTarget: number;
   fatTarget: number;
+  height: number;
+  weight: number;
+  age: number;
+  gender: string;
+  activityLevel: string;
 };
 
 export type MealPlan = {
@@ -51,7 +62,7 @@ export type MealPlan = {
   weekStart: string;
   days: {
     date: string;
-    meals: { mealType: string; recipeId: string }[];
+    meals: { mealType: string; recipeId: Recipe }[];
   }[];
 };
 
@@ -59,6 +70,17 @@ export type ShoppingList = {
   _id: string;
   weekStart: string;
   items: { name: string; quantity: number; unit: string; ingredientId?: string }[];
+};
+
+export type PaginationMeta = {
+  total: number;
+  totalCount?: number;
+  page: number;
+  currentPage?: number;
+  limit: number;
+  totalPages: number;
+  hasMore: boolean;
+  expiringSoonCount?: number;
 };
 
 export type PantryItem = {
@@ -116,6 +138,7 @@ export type AdminActivity = {
 
 export type User = {
   id: string;
+  _id?: string; // Support both for safety during migration
   username: string;
   email: string;
   role: string;
@@ -171,15 +194,12 @@ export type UserAnalytics = {
     carbs: number;
     fat: number;
   };
+  cuisineMastery: { name: string; value: number }[];
+  topRecipes: { count: number; name: string; image?: string }[];
+  mealTypeStats: { name: string; value: number }[];
+  streak: number;
 };
 
-export type PaginationMeta = {
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  limit: number;
-  expiringSoonCount: number; // Added for the Use Soon warning
-};
 
 export type Notification = {
   _id: string;
@@ -329,8 +349,14 @@ export function toggleSaveRecipeApi(recipeId: string) {
    Recipe APIs
 ========================= */
 
-export function listRecipesApi() {
-  return request<{ recipes: Recipe[] }>("/recipes", { method: "GET" });
+export function listRecipesApi(params?: { page?: number; limit?: number; search?: string; cuisine?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.search) query.set("search", params.search);
+  if (params?.cuisine) query.set("cuisine", params.cuisine);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<{ recipes: Recipe[]; pagination: PaginationMeta }>(`/recipes${suffix}`, { method: "GET" });
 }
 
 export function listCuisinesApi() {
@@ -534,8 +560,12 @@ export function getAdminAnalyticsApi() {
   return request<AdminAnalytics>("/admin/analytics", { method: "GET" });
 }
 
-export function getUserAnalyticsApi() {
-  return request<UserAnalytics>("/analytics/me", { method: "GET" });
+export function getUserAnalyticsApi(params?: { days?: number; cuisine?: string }) {
+  const query = new URLSearchParams();
+  if (params?.days) query.append("days", params.days.toString());
+  if (params?.cuisine) query.append("cuisine", params.cuisine);
+  const qStr = query.toString();
+  return request<UserAnalytics>(`/analytics/me${qStr ? `?${qStr}` : ""}`, { method: "GET" });
 }
 
 export function getDashboardSummaryApi() {
@@ -560,4 +590,59 @@ export function markAllNotificationsAsReadApi() {
 
 export function deleteNotificationApi(id: string) {
   return request<{ ok: boolean }>(`/notifications/${id}`, { method: "DELETE" });
+}
+
+export type KitchenReport = {
+  summary: {
+    totalItems: number;
+    lowStockCount: number;
+    expiryRiskCount: number;
+    efficiencyScore: number;
+  };
+  inventoryDetails: {
+    lowStock: { name: string; qty: number; unit: string }[];
+    expiringSoon: { name: string; added: string }[];
+  };
+  nutrition: {
+    weeklyCalories: number;
+    weeklyProtein: number;
+    avgDailyCals: number;
+  };
+  generatedAt: string;
+};
+
+export async function getFullReportApi() {
+  return request<KitchenReport>("/analytics/report", { method: "GET" });
+}
+
+export async function testReportEmailApi() {
+  return request<{ message: string }>("/analytics/report/test-email", { method: "POST" });
+}
+
+export type CookingLog = {
+  _id: string;
+  userId: string;
+  recipeId: Recipe | string;
+  ingredientsUsed: { name: string; quantity: number; unit: string }[];
+  performedAt: string;
+};
+
+export async function createCookingLogApi(data: { recipeId: string; servings: number }) {
+  return request<{ log: CookingLog }>("/cooking-logs", {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export async function getCookingHistoryApi() {
+  return request<{ history: CookingLog[] }>("/cooking-logs/history", {
+    method: "GET"
+  });
+}
+
+export function processVideoApi(videoUrl: string) {
+  return request<{ recipe: Recipe }>("/recipes/process-video", {
+    method: "POST",
+    body: JSON.stringify({ videoUrl }),
+  });
 }

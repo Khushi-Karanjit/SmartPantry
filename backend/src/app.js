@@ -35,6 +35,7 @@ function createApp() {
   app.use("/api/shopping-lists", require("./routes/shoppinglists.routes"));
   app.use("/api/ingredients", require("./routes/ingredients.routes"));
   app.use("/api/notifications", require("./routes/notification.routes"));
+  app.use("/api/cooking-logs", require("./routes/cookingLog.routes"));
   app.use("/api/admin", require("./routes/admin.routes"));
 
 

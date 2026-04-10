@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { searchIngredientsApi, type Ingredient } from "../api/api";
 import AddCustomIngredientModal from "./AddCustomIngredientModal";
 
@@ -89,7 +89,7 @@ export default function IngredientSearchSelect({
               >
                 <span className="ingredient-name">{item.name}</span>
                 <span className="ingredient-meta">
-                  {item.category} · {item.isCustom ? "Custom" : "Master"}
+                  {item.category} � {item.isCustom ? "Custom" : "Master"}
                 </span>
               </button>
             ))}

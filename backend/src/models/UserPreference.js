@@ -10,6 +10,19 @@ const userPreferenceSchema = new mongoose.Schema(
     maxPrepMinutes: { type: Number, default: 0, min: 0 },
     mealsPerDay: { type: Number, default: 2, min: 1, max: 3 },
     repeatLimitWeekly: { type: Number, default: 2, min: 1, max: 7 },
+    
+    // Biometric Data for TDEE/BMR
+    height: { type: Number, default: 0, min: 0 }, // in cm
+    weight: { type: Number, default: 0, min: 0 }, // in kg
+    age: { type: Number, default: 0, min: 0 },
+    gender: { type: String, enum: ["male", "female", "other", ""], default: "" },
+    activityLevel: { 
+      type: String, 
+      enum: ["sedentary", "light", "moderate", "active", "very_active", ""], 
+      default: "" 
+    },
+
+    // Daily Nutritional Targets
     caloriesTarget: { type: Number, default: 0, min: 0 },
     proteinTarget: { type: Number, default: 0, min: 0 },
     carbsTarget: { type: Number, default: 0, min: 0 },

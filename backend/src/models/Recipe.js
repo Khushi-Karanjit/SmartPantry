@@ -24,8 +24,21 @@ const recipeSchema = new mongoose.Schema(
     fat: { type: Number, default: 0, min: 0 },
     servings: { type: Number, default: 2, min: 1 },
     ingredients: { type: [ingredientSchema], default: [] },
-    steps: { type: [String], default: [] },
+    steps: {
+      type: [{
+        text: { type: String, required: true },
+        startTime: { type: Number, default: 0 } // In seconds
+      }],
+      default: []
+    },
     imageUrl: { type: String, default: "" },
+    videoUrl: { type: String, default: "" },
+    mealType: {
+      type: String,
+      enum: ["breakfast", "lunch", "dinner", "snack"],
+      default: "lunch",
+      index: true,
+    },
     status: {
       type: String,
       enum: ["published", "draft", "archived"],
@@ -37,6 +50,24 @@ const recipeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-recipeSchema.index({ name: 1, cuisine: 1, diet: 1 });
+recipeSchema.index({ name: 1, cuisine: 1, diet: 1, mealType: 1 });
+
+// Dynamic Macro Sync Hook
+recipeSchema.pre("save", async function () {
+  if (this.isModified("ingredients")) {
+    try {
+      // Lazy load to avoid circular dependency
+      const { calculateRecipeMacros } = require("../services/nutrition.service");
+      const macros = await calculateRecipeMacros(this.ingredients);
+      
+      this.calories = macros.calories;
+      this.protein = macros.protein;
+      this.carbs = macros.carbs;
+      this.fat = macros.fat;
+    } catch (err) {
+      console.error("Macro calculation hook failed:", err);
+    }
+  }
+});
 
 module.exports = mongoose.model("Recipe", recipeSchema);

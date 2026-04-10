@@ -1,9 +1,8 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import { getPantryItemsApi, listRecipesApi, type PantryItem, type Recipe } from "../api/api";
-import "../styles/recipes.css";
 
 type RecipeMatch = Recipe & { match: number };
 
@@ -194,7 +193,7 @@ export default function Recipes() {
                       <h4>Steps</h4>
                       <ol>
                         {(selected.steps || []).map((step, idx) => (
-                          <li key={`${step}-${idx}`}>{step}</li>
+                          <li key={`step-${idx}`}>{step.text}</li>
                         ))}
                       </ol>
                     </div>

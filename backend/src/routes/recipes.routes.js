@@ -11,7 +11,8 @@ const {
   toggleSaveRecipe,
   getSavedRecipes,
   suggestRecipes,
-  listCuisines
+  listCuisines,
+  processVideo
 } = require("../controllers/recipes.controller");
 
 router.get("/", requireAuth, listRecipes);
@@ -20,6 +21,7 @@ router.get("/suggested", requireAuth, suggestRecipes);
 router.get("/saved", requireAuth, getSavedRecipes);
 router.get("/:id", requireAuth, getRecipe);
 router.post("/saved/:id", requireAuth, toggleSaveRecipe);
+router.post("/process-video", requireAuth, requireRole("admin"), processVideo);
 router.post("/", requireAuth, requireRole("admin"), createRecipe);
 router.put("/:id", requireAuth, requireRole("admin"), updateRecipe);
 router.delete("/:id", requireAuth, requireRole("admin"), deleteRecipe);
