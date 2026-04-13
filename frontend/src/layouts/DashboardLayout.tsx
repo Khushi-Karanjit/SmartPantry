@@ -66,7 +66,7 @@ export default function DashboardLayout(props: {
       </aside>
 
       {/* Subtle Minimalist Background Decorations (taking over from the old 3D scene) */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden mix-blend-multiply opacity-[0.30]">
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden mix-blend-multiply opacity-[0.15] grayscale">
          <motion.img style={{ y: y1, x: x1, rotate: rotate1, opacity: opacity1, scaleX: -1 }} src="/assets/broccoli.png" alt="" className="absolute top-[15%] left-[25%] sm:left-[35%] lg:left-[45%] w-64 h-auto blur-[1px]" />
          <motion.img style={{ y: y2, x: x2, rotate: rotate2, opacity: opacity2 }} src="/assets/carrot.png" alt="" className="absolute bottom-[20%] right-[20%] sm:right-[30%] lg:right-[25%] w-72 h-auto blur-[2px]" />
          <motion.img style={{ y: y3, x: x3, rotate: rotate3, opacity: opacity3 }} src="/assets/tomato.png" alt="" className="absolute top-[30%] right-[10%] sm:right-[20%] lg:right-[15%] w-48 h-auto blur-[1px]" />

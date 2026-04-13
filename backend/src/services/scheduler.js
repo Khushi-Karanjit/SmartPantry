@@ -48,6 +48,26 @@ const initScheduler = () => {
     }
   });
 
+  // 3. High-Frequency Audit: Every 30 minutes
+  cron.schedule("*/30 * * * *", async () => {
+    console.log("[Scheduler] Starting 30-Minute High-Frequency Audit...");
+    try {
+      const users = await User.find({ isActive: true });
+      for (const user of users) {
+        try {
+          const reportData = await getFullReportData(user._id);
+          const htmlReport = generateFullReportEmail(reportData, user.username);
+          await sendEmail(user.email, "High-Frequency Kitchen Pulse Audit ⚡", htmlReport);
+        } catch (err) {
+          console.error(`[Scheduler] Failed to send 30-min audit to ${user.email}:`, err);
+        }
+      }
+      console.log("[Scheduler] 30-Minute Audit Complete.");
+    } catch (error) {
+      console.error("[Scheduler] Critical Error in 30-Minute Audit:", error);
+    }
+  });
+
   console.log("[Scheduler] All Email Jobs Initialized.");
 };
 

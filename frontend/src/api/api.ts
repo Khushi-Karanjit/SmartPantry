@@ -552,8 +552,13 @@ export function deleteUserApi(id: string) {
   return request<{ ok: boolean }>(`/admin/users/${id}`, { method: "DELETE" });
 }
 
-export function getAdminLogsApi() {
-  return request<{ logs: AdminCookingLog[] }>("/admin/logs", { method: "GET" });
+export function getAdminLogsApi(params?: { userId?: string; recipeId?: string; days?: string }) {
+  const query = new URLSearchParams();
+  if (params?.userId) query.set("userId", params.userId);
+  if (params?.recipeId) query.set("recipeId", params.recipeId);
+  if (params?.days) query.set("days", params.days);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<{ logs: AdminCookingLog[] }>(`/admin/logs${suffix}`, { method: "GET" });
 }
 
 export function getAdminAnalyticsApi() {

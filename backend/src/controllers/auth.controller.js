@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
+const { sendEmail } = require("../services/email.service");
 
 function signToken(userId, role) {
   if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is missing in .env");
@@ -46,6 +48,39 @@ async function register(req, res, next) {
       role,
     });
 
+    // Send Welcome Email
+    try {
+      const welcomeHtml = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+          <div style="background: #2563eb; padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0;">Welcome to SmartPantry! 🥘</h1>
+          </div>
+          <div style="padding: 30px; color: #374151;">
+            <h2 style="color: #111827;">Hello ${user.username},</h2>
+            <p>We're thrilled to have you on board! Your SmartPantry account has been successfully created.</p>
+            <p>With SmartPantry, you can now:</p>
+            <ul style="padding-left: 20px;">
+              <li>Track your inventory with high-density precision</li>
+              <li>Get AI-optimized recipe suggestions</li>
+              <li>Receive automated 30-minute kitchen audits</li>
+            </ul>
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+              <p style="margin: 0;"><strong>Active Email:</strong> ${user.email}</p>
+              <p style="margin: 5px 0 0 0;"><strong>Account Status:</strong> Fully Operational</p>
+            </div>
+            <p>Get started by setting up your virtual pantry and exploring your first recipe!</p>
+            <a href="http://localhost:5173/dashboard" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px;">Open Dashboard</a>
+          </div>
+          <div style="background: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #6b7280;">
+            <p style="margin: 0;">&copy; 2026 SmartPantry - Your Intelligent Kitchen Assistant</p>
+          </div>
+        </div>
+      `;
+      await sendEmail(user.email, "Welcome to SmartPantry: Your Intelligent Kitchen Awaits! 🥗", welcomeHtml);
+    } catch (err) {
+      console.error("[Auth] Failed to send welcome email:", err);
+    }
+
     return res.status(201).json({
       user: {
         id: user._id.toString(),
@@ -68,7 +103,6 @@ async function login(req, res, next) {
     }
 
     const input = String(usernameOrEmail).trim();
-
     const query = input.includes("@")
       ? { email: input.toLowerCase() }
       : { username: input };
@@ -82,6 +116,41 @@ async function login(req, res, next) {
 
     const role = user.role || "user";
     const token = signToken(user._id.toString(), role);
+
+    // Create in-app notification
+    try {
+      await Notification.create({
+        userId: user._id,
+        title: "Login Successful",
+        message: `Welcome back, ${user.username}! Your session has started.`,
+        type: "system",
+        priority: "low"
+      });
+    } catch (err) {
+      console.error("[Auth] Failed to create login notification:", err);
+    }
+
+    // Send security email
+    try {
+      const loginTime = new Date().toLocaleString();
+      const emailHtml = `
+        <div style="font-family: sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #2563eb;">Security Alert: Successful Login 🛡️</h2>
+          <p>Hello <strong>${user.username}</strong>,</p>
+          <p>A new login was detected for your SmartPantry account.</p>
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Time:</strong> ${loginTime}</p>
+            <p style="margin: 5px 0 0 0;"><strong>Status:</strong> Success</p>
+          </div>
+          <p>If this was you, you can safely ignore this email. If you did not log in, please secure your account immediately.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #999;">This is an automated security notification from SmartPantry.</p>
+        </div>
+      `;
+      await sendEmail(user.email, "Security Alert: Successful Login 🛡️", emailHtml);
+    } catch (err) {
+      console.error("[Auth] Failed to send login security email:", err);
+    }
 
     return res.json({
       token,

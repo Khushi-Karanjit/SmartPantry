@@ -30,9 +30,10 @@ exports.getAdminStats = async (req, res) => {
     // Most cooked recipe (top by CookingLog frequency)
     const mostCookedAgg = await CookingLog.aggregate([
       { $group: { _id: "$recipeId", count: { $sum: 1 } } },
+      { $lookup: { from: "recipes", localField: "_id", foreignField: "_id", as: "recipe" } },
+      { $match: { "recipe.0": { $exists: true } } },
       { $sort: { count: -1 } },
       { $limit: 1 },
-      { $lookup: { from: "recipes", localField: "_id", foreignField: "_id", as: "recipe" } },
       { $unwind: "$recipe" }
     ]);
     const mostCookedRecipe = mostCookedAgg[0]?.recipe?.name || "N/A";
@@ -128,12 +129,24 @@ exports.deleteUser = async (req, res) => {
 
 exports.getAdminLogs = async (req, res) => {
   try {
-    const logs = await CookingLog.find()
+    const { userId, recipeId, days } = req.query;
+    const query = {};
+
+    if (userId) query.userId = userId;
+    if (recipeId) query.recipeId = recipeId;
+    if (days) {
+      const date = new Date();
+      date.setDate(date.getDate() - parseInt(days));
+      query.performedAt = { $gte: date };
+    }
+
+    const logs = await CookingLog.find(query)
       .sort({ performedAt: -1 })
-      .limit(50)
-      .populate("userId", "username")
+      .limit(100)
+      .populate("userId", "username email")
       .populate("recipeId", "name")
       .lean();
+
     res.json({ logs });
   } catch (err) {
     res.status(500).json({ message: err.message || "Failed to fetch logs" });
@@ -145,9 +158,10 @@ exports.getAdminAnalytics = async (req, res) => {
     // Most cooked recipes (top 10)
     const mostCooked = await CookingLog.aggregate([
       { $group: { _id: "$recipeId", count: { $sum: 1 } } },
+      { $lookup: { from: "recipes", localField: "_id", foreignField: "_id", as: "recipe" } },
+      { $match: { "recipe.0": { $exists: true } } },
       { $sort: { count: -1 } },
       { $limit: 10 },
-      { $lookup: { from: "recipes", localField: "_id", foreignField: "_id", as: "recipe" } },
       { $unwind: "$recipe" },
       { $project: { name: "$recipe.name", count: 1 } }
     ]);

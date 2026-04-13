@@ -43,7 +43,7 @@ async function getPresets(req, res) {
  */
 async function initializePantry(req, res) {
   try {
-    const { presetKey } = req.body;
+    const { presetKey, selectedNames } = req.body;
     if (!presetKey) return res.status(400).json({ message: "presetKey is required" });
     const userId = req.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -59,7 +59,11 @@ async function initializePantry(req, res) {
     const otherId = catMap.get("other") || null;
 
     const docs = [];
-    for (const it of preset.items || []) {
+    const itemsToProcess = Array.isArray(selectedNames) 
+      ? (preset.items || []).filter(it => selectedNames.includes(it.name))
+      : (preset.items || []);
+
+    for (const it of itemsToProcess) {
       const catName = String(it.category || "Other");
       const categoryId = catMap.get(catName.toLowerCase()) || otherId;
       if (!categoryId) continue;
