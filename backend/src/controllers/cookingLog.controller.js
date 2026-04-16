@@ -51,9 +51,13 @@ exports.createLog = async (req, res) => {
       }).session(session);
 
       if (pantryItem) {
-        // Subtract quantity, but don't go below 0
-        pantryItem.quantity = Math.max(0, pantryItem.quantity - neededQty);
-        await pantryItem.save({ session });
+        const remainingQty = pantryItem.quantity - neededQty;
+        if (remainingQty <= 0) {
+          await PantryItem.deleteOne({ _id: pantryItem._id }).session(session);
+        } else {
+          pantryItem.quantity = remainingQty;
+          await pantryItem.save({ session });
+        }
       }
     }
 

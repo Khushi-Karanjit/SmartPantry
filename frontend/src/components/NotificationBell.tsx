@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, X, Calendar, AlertTriangle, Info } from "lucide-react";
+import { Bell, X, Calendar, AlertTriangle, Info, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { 
   getNotificationsApi, 
   markNotificationAsReadApi, 
@@ -7,6 +8,7 @@ import {
   deleteNotificationApi,
   type Notification 
 } from "../api/api";
+import { formatFullTimestamp } from "../utils/timeUtils";
 import "./NotificationBell.css";
 
 export default function NotificationBell() {
@@ -18,8 +20,8 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 5 minutes
-    const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
+    // Proactive Monitoring: Poll for new notifications every 60 seconds
+    const interval = setInterval(fetchNotifications, 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -120,9 +122,14 @@ export default function NotificationBell() {
                   <div className="notif-content">
                     <p className="notif-title">{notif.title}</p>
                     <p className="notif-message">{notif.message}</p>
-                    <span className="notif-time">
-                      {new Date(notif.createdAt).toLocaleDateString()}
-                    </span>
+                    <div className="notif-time-container">
+                       <span className="notif-time-relative" title={formatFullTimestamp(notif.createdAt).exact}>
+                         {formatFullTimestamp(notif.createdAt).relative}
+                       </span>
+                       <span className="notif-time-exact">
+                         {formatFullTimestamp(notif.createdAt).exact}
+                       </span>
+                    </div>
                   </div>
                   <div className="notif-actions">
                     <button onClick={(e) => handleDelete(e, notif._id)} title="Delete">
@@ -139,11 +146,12 @@ export default function NotificationBell() {
             )}
           </div>
 
-          {notifications.length > 0 && (
             <div className="dropdown-footer">
+              <Link to="/notifications" className="view-all-link" onClick={() => setIsOpen(false)}>
+                View All Alerts <ArrowRight size={14} />
+              </Link>
               <button onClick={() => setIsOpen(false)}>Close</button>
             </div>
-          )}
         </div>
       )}
     </div>

@@ -90,23 +90,29 @@ async function seed() {
 
     // 3. Seed Ingredients based on Presets
     console.log("Seeding ingredients...");
-    await Ingredient.deleteMany({});
+    // We don't deleteMany anymore to allow incremental seeding from multiple sources
     const ingredientDocs = [];
     const seenNames = new Set();
     for (const preset of presets) {
       for (const item of preset.items) {
         const lowerName = item.name.toLowerCase();
         if (!seenNames.has(lowerName)) {
-          ingredientDocs.push({
-            name: lowerName,
-            category: item.category,
-            defaultUnit: item.unit,
-          });
-          seenNames.add(lowerName);
+           // Use upsert to prevent duplicates and keep existing IDs if they match
+           const ing = await Ingredient.findOneAndUpdate(
+             { name: lowerName.toUpperCase() }, // Matches our model's uppercase: true
+             { 
+               category: item.category,
+               defaultUnit: item.unit,
+               isCustom: false
+             },
+             { upsert: true, new: true }
+           );
+           ingredientDocs.push(ing);
+           seenNames.add(lowerName);
         }
       }
     }
-    const insertedIngredients = await Ingredient.insertMany(ingredientDocs);
+    const insertedIngredients = ingredientDocs;
     const ingMap = new Map(insertedIngredients.map(i => [i.name.toLowerCase(), i._id]));
 
     // 4. Seed Recipes

@@ -17,6 +17,7 @@ import AdminLogs from "./pages/AdminLogs";
 import Profile from "./pages/Profile";
 import RecipeSuggester from "./pages/RecipeSuggester";
 import Analytics from "./pages/Analytics";
+import Notifications from "./pages/Notifications";
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/recipe-suggester" element={<ProtectedRoute><RecipeSuggester /></ProtectedRoute>} />
         <Route path="/meal-planner" element={<ProtectedRoute><MealPlanner /></ProtectedRoute>} />
         <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>

@@ -163,11 +163,25 @@
     word-wrap: break-word;
   }
   
-  .notif-time {
-    display: block;
-    margin-top: 0.4rem;
-    font-size: 0.7rem;
+  .notif-time-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.5rem;
+    gap: 0.1rem;
+  }
+  
+  .notif-time-relative {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6366f1;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  
+  .notif-time-exact {
+    font-size: 0.65rem;
     color: #94a3b8;
+    font-weight: 500;
   }
   
   .notif-actions {
@@ -210,25 +224,50 @@
   }
   
   .dropdown-footer {
-    padding: 0.75rem;
+    padding: 1rem;
     border-top: 1px solid #e2e8f0;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     background-color: #f8fafc;
+  }
+  
+  .view-all-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #6366f1;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background-color: #eff6ff;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  
+  .view-all-link:hover {
+    background-color: #6366f1;
+    color: white;
   }
   
   .dropdown-footer button {
     background: none;
     border: none;
-    color: #64748b;
-    font-size: 0.85rem;
+    color: #94a3b8;
+    font-size: 0.75rem;
     font-weight: 600;
+    text-transform: uppercase;
     cursor: pointer;
     width: 100%;
     padding: 0.25rem;
   }
   
   .dropdown-footer button:hover {
-    color: #0f172a;
+    color: #64748b;
   }
   
   /* Severity line indicator on the left side of the item */

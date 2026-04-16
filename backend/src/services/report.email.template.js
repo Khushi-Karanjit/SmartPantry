@@ -19,8 +19,8 @@ const generateFullReportEmail = (report, username) => {
   return `
     <div style="font-family: sans-serif; color: #1e293b; max-width: 700px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #ffffff;">
       <div style="background: #f8fafc; padding: 40px; border-bottom: 2px solid #f1f5f9;">
-        <h1 style="margin: 0; color: #0f172a; font-size: 28px;">Kitchen Status Audit 🏛️</h1>
-        <p style="color: #64748b; margin-top: 8px;">Hi ${username}, here is your automated 24-hour kitchen briefing.</p>
+        <h1 style="margin: 0; color: #0f172a; font-size: 28px;">Smart Pantry Status</h1>
+        <p style="color: #64748b; margin-top: 8px;">Hi ${username}, here is your daily kitchen inventory status report (08:00 AM).</p>
       </div>
 
       <div style="padding: 40px;">

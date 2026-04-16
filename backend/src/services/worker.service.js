@@ -7,17 +7,19 @@ const { sendAlertEmail } = require("./mail.service");
 
 /**
  * Check for expiring items and low stock across all users
+ * Runs frequently to ensure "the moment" notifications are sent.
  */
 async function checkPantryExpirations() {
-  console.log("Running Daily Pantry Expiration Check...");
+  console.log("Running Real-Time Pantry Expiration Watcher...");
   
   try {
     const users = await User.find({ isActive: true });
-    
+    const now = new Date();
+
     for (const user of users) {
+      // Find items and populate ingredient for shelfLife
       const items = await PantryItem.find({ userId: user._id }).populate("ingredientId");
       const alerts = [];
-      const now = new Date();
 
       for (const item of items) {
         if (!item.ingredientId) continue;
@@ -27,46 +29,60 @@ async function checkPantryExpirations() {
 
         const addedAt = new Date(item.addedAt);
         const expiryDate = new Date(addedAt.getTime() + shelfLife * 24 * 60 * 60 * 1000);
-        const daysToExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-
-        let priority = "low";
-        let title = "";
-        let message = "";
-
-        if (daysToExpiry <= 1 && daysToExpiry >= 0) {
-          priority = "high";
-          title = "Item Expiring Tomorrow!";
-          message = `Your ${item.name} is expiring within 24 hours. Use it soon!`;
-        } else if (daysToExpiry <= 3 && daysToExpiry > 1) {
-          priority = "medium";
-          title = "Item Expiring Soon";
-          message = `Your ${item.name} will expire in ${daysToExpiry} days.`;
-        }
-
-        if (title) {
-          // Check if we already sent this specific notification today to avoid spam
-          const existing = await Notification.findOne({
+        
+        // Check if item JUST expired (or is already expired)
+        if (expiryDate <= now) {
+          // Check if we've already sent a "JUST EXPIRED" notification for this item
+          const existingExpired = await Notification.findOne({
             userId: user._id,
-            title,
+            type: "expiry",
             "metadata.itemId": item._id,
-            createdAt: { $gte: new Date(now.setHours(0,0,0,0)) }
+            title: { $regex: /EXPIRED/i }
           });
 
-          if (!existing) {
+          if (!existingExpired) {
             const notif = await Notification.create({
               userId: user._id,
-              title,
-              message,
-              priority,
+              title: `${item.name.toUpperCase()} EXPIRED`,
+              message: `This item has reached its shelf life as of ${expiryDate.toLocaleString()}. Please check it before use.`,
+              priority: "high",
               type: "expiry",
-              metadata: { itemId: item._id }
+              metadata: { itemId: item._id, event: "expired" }
+            });
+            alerts.push(notif);
+            console.log(`[PROACTIVE ALERT] Sent expiry notice for ${item.name} to user ${user.username}`);
+          }
+          continue; // No need to check "expiring tomorrow" if it's already expired
+        }
+
+        // Secondary check: Expiring tomorrow (24h warning)
+        const diffMs = expiryDate.getTime() - now.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours <= 24 && diffHours > 0) {
+          const existingWarning = await Notification.findOne({
+            userId: user._id,
+            type: "expiry",
+            "metadata.itemId": item._id,
+            title: { $regex: /TOMORROW/i },
+            createdAt: { $gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) }
+          });
+
+          if (!existingWarning) {
+            const notif = await Notification.create({
+              userId: user._id,
+              title: `${item.name.toUpperCase()} EXPIRING TOMORROW`,
+              message: `Your ${item.name} will reach its shelf life in less than 24 hours.`,
+              priority: "high",
+              type: "expiry",
+              metadata: { itemId: item._id, event: "warning_24h" }
             });
             alerts.push(notif);
           }
         }
       }
 
-      // If we have high priority alerts, send an email
+      // Proactive Email for High Priority High Alert
       if (alerts.some(a => a.priority === "high")) {
         try {
           await sendAlertEmail(user, alerts);
@@ -76,25 +92,21 @@ async function checkPantryExpirations() {
       }
     }
   } catch (error) {
-    console.error("Error in checkPantryExpirations:", error);
+    console.error("Error in checkPantryExpirations monitor:", error);
   }
 }
 
 /**
  * Initialize all cron jobs
+ * Updated to high-frequency (every minute) for "the moment" accuracy.
  */
 function initWorkers() {
-  // Run every day at midnight (00:00)
-  cron.schedule("0 0 * * *", () => {
+  // Run every minute
+  cron.schedule("* * * * *", () => {
     checkPantryExpirations();
   });
 
-  // For testing purposes, you can uncomment this to run every minute
-  // cron.schedule("* * * * *", () => {
-  //   checkPantryExpirations();
-  // });
-
-  console.log("Global Pantry Workers Initialized (Daily at 00:00)");
+  console.log("Real-Time Pantry Watcher Initialized (Frequency: 1m)");
 }
 
 module.exports = {

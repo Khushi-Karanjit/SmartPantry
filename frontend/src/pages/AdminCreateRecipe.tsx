@@ -23,7 +23,10 @@ import {
     Database,
     Dna,
     ShieldAlert,
-    Loader2
+    Loader2,
+    Beef,
+    Wheat,
+    Droplets
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
@@ -32,7 +35,8 @@ import {
     updateRecipeApi,
     getRecipeApi,
     searchIngredientsApi,
-    processVideoApi
+    processVideoApi,
+    PANTRY_UNITS
 } from "../api/api";
 import type { Ingredient } from "../api/api";
 
@@ -97,6 +101,18 @@ export default function AdminCreateRecipe() {
             setPrevServings(recipe.servings);
         }
     }, [recipe.servings, prevServings, recipe.ingredients]);
+
+    // Real-time Macro-to-Calorie Calculation (4-4-9 Formula)
+    useEffect(() => {
+        const calculatedCalories = (recipe.protein * 4) + (recipe.carbs * 4) + (recipe.fat * 9);
+        // Only update if it significantly differs to allow for minor rounding or intentional overrides
+        if (Math.abs(calculatedCalories - recipe.calories) > 0.5) {
+            setRecipe(prev => ({ 
+                ...prev, 
+                calories: Math.round(calculatedCalories * 10) / 10 
+            }));
+        }
+    }, [recipe.protein, recipe.carbs, recipe.fat]);
 
     const [tagInput, setTagInput] = useState("");
     const [ingredientSearch, setIngredientSearch] = useState("");
@@ -250,8 +266,6 @@ export default function AdminCreateRecipe() {
             // Update entire recipe state with backend precision
             setRecipe(prev => ({
                 ...prev,
-                name: sug.name || prev.name,
-                description: sug.description || prev.description,
                 cuisine: sug.cuisine || prev.cuisine,
                 diet: sug.diet || prev.diet,
                 prepMinutes: sug.prepMinutes || prev.prepMinutes,
@@ -400,20 +414,21 @@ export default function AdminCreateRecipe() {
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1">Image URL</label>
-                                            <input
-                                                type="text"
-                                                className="w-full bg-[#FAFDFF] border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all"
-                                                placeholder="https://..."
-                                                value={recipe.imageUrl}
-                                                onChange={e => setRecipe({ ...recipe, imageUrl: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1">Video URL</label>
-                                            <div className="relative group">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">Image URL</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-[#FAFDFF] border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all"
+                                            placeholder="https://..."
+                                            value={recipe.imageUrl}
+                                            onChange={e => setRecipe({ ...recipe, imageUrl: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5 pt-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">Video Source (YouTube)</label>
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <div className="relative group flex-1">
                                                 <VideoIcon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
                                                     type="text"
@@ -423,6 +438,14 @@ export default function AdminCreateRecipe() {
                                                     onChange={e => setRecipe({ ...recipe, videoUrl: e.target.value })}
                                                 />
                                             </div>
+                                            <button 
+                                                type="button" 
+                                                className={`bg-yellow-50 text-yellow-600 border border-yellow-200 py-3 px-6 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 group hover:bg-yellow-100 transition-all shrink-0 ${autoLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                                                onClick={handleAutoGenerateSteps}
+                                            >
+                                                {autoLoading ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />}
+                                                {autoLoading ? "Syncing..." : "Auto-Generate"}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -483,6 +506,30 @@ export default function AdminCreateRecipe() {
                                             <div className="flex items-center gap-2">
                                                 <input
                                                     type="number"
+                                                    className="w-full bg-transparent text-2xl font-bold text-slate-900 focus:outline-none"
+                                                    value={spec.v}
+                                                    onChange={e => setRecipe({ ...recipe, [spec.k]: Number(e.target.value) })}
+                                                />
+                                                <span className="text-xs font-bold text-slate-400">{spec.s}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    {[
+                                        { l: "Protein", v: recipe.protein, i: <Beef size={16} />, k: "protein", s: "G" },
+                                        { l: "Carbs", v: recipe.carbs, i: <Wheat size={16} />, k: "carbs", s: "G" },
+                                        { l: "Fat", v: recipe.fat, i: <Droplets size={16} />, k: "fat", s: "G" }
+                                    ].map(spec => (
+                                        <div key={spec.l} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                            <div className="flex items-center gap-2 text-slate-600">
+                                                {spec.i}
+                                                <span className="text-xs font-bold uppercase tracking-widest">{spec.l}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
                                                     className="w-full bg-transparent text-2xl font-bold text-slate-900 focus:outline-none"
                                                     value={spec.v}
                                                     onChange={e => setRecipe({ ...recipe, [spec.k]: Number(e.target.value) })}
@@ -599,13 +646,15 @@ export default function AdminCreateRecipe() {
                                                 </div>
                                                 <div className="col-span-1 space-y-1.5">
                                                     <label className="text-xs font-bold text-slate-500 ml-1">UNIT</label>
-                                                    <input
-                                                        type="text"
-                                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-400"
-                                                        placeholder="Unit"
+                                                    <select
+                                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-400 appearance-none cursor-pointer"
                                                         value={ing.unit}
                                                         onChange={e => updateIngredient(idx, { unit: e.target.value })}
-                                                    />
+                                                    >
+                                                        {PANTRY_UNITS.map(u => (
+                                                            <option key={u} value={u}>{u}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -628,14 +677,6 @@ export default function AdminCreateRecipe() {
                                     <Timer size={24} className="text-green-600" />
                                     <h3 className="text-lg font-bold text-slate-900">Instructions</h3>
                                 </div>
-                                <button 
-                                    type="button" 
-                                    className={`bg-yellow-50 text-yellow-600 border border-yellow-200 py-2.5 px-6 rounded-xl text-sm font-bold uppercase flex items-center gap-2 group hover:bg-yellow-100 transition-colors ${autoLoading ? 'opacity-50 pointer-events-none' : ''}`}
-                                    onClick={handleAutoGenerateSteps}
-                                >
-                                    {autoLoading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />}
-                                    {autoLoading ? "Extracting..." : "Auto-Generate"}
-                                </button>
                             </div>
 
                             <div className="p-6 space-y-4">
@@ -690,9 +731,9 @@ export default function AdminCreateRecipe() {
                 <motion.div 
                     initial={{ y: 100 }}
                     animate={{ y: 0 }}
-                    className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 lg:px-12"
+                    className="fixed bottom-0 left-0 lg:left-72 right-0 z-50 p-4 sm:p-6 lg:px-12"
                 >
-                    <div className="max-w-[1600px] mx-auto bg-[#FAFDFF] border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="max-w-[1600px] mx-auto bg-[#FAFDFF]/80 backdrop-blur-xl border border-slate-200/60 rounded-3xl p-4 sm:p-6 shadow-[0_-20px_50px_rgba(0,0,0,0.05)] flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-center sm:justify-start hidden md:flex">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                                 <Terminal size={24} />

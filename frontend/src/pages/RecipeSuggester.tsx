@@ -34,32 +34,6 @@ export default function RecipeSuggester() {
       const res = await getPantryItemsApi();
       const items = res.items || [];
       setPantryItems(items);
-      
-      if (items.length === 0) {
-        setSelectedIngredients([]);
-        setSuggestedRecipes([]);
-        return;
-      }
-
-      const fromPantry: Ingredient[] = items.map(item => {
-        const ingData = (item.ingredientId && typeof item.ingredientId === 'object') 
-          ? item.ingredientId 
-          : { _id: item.ingredientId, name: item.name, category: item.category, defaultUnit: item.unit };
-
-        return {
-          _id: (ingData as any)._id || String(ingData),
-          name: (ingData as any).name || item.name,
-          category: (ingData as any).category || item.category,
-          defaultUnit: (ingData as any).defaultUnit || item.unit,
-          shelfLifeDays: (ingData as any).shelfLifeDays || 0,
-          isCustom: false
-        };
-      });
-      setSelectedIngredients(fromPantry);
-      
-      const ids = fromPantry.map(i => i._id);
-      const suggRes = await suggestRecipesApi(ids);
-      setSuggestedRecipes(suggRes.recipes || []);
     } catch (err) {
       console.error("Pantry sync error", err);
     }
@@ -227,61 +201,63 @@ export default function RecipeSuggester() {
                    </div>
                 </motion.div>
               ) : suggestedRecipes.length > 0 ? (
-                <motion.div 
-                  key="results"
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                >
-                  {suggestedRecipes.map(recipe => (
-                    <motion.div 
-                      key={recipe._id} 
-                      variants={item}
-                      whileHover={{ y: -4 }}
-                      className="bg-white rounded-3xl overflow-hidden cursor-pointer group border border-slate-200 hover:border-blue-200 transition-all shadow-md hover:shadow-md"
-                      onClick={() => navigate(`/recipes/${recipe._id}`)}
-                    >
-                      <div className="relative aspect-[16/10]">
-                        <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                <div className="max-h-[750px] overflow-y-auto pr-2 custom-scrollbar">
+                  <motion.div 
+                    key="results"
+                    variants={container}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
+                    {suggestedRecipes.map(recipe => (
+                      <motion.div 
+                        key={recipe._id} 
+                        variants={item}
+                        whileHover={{ y: -4 }}
+                        className="bg-white rounded-3xl overflow-hidden cursor-pointer group border border-slate-200 hover:border-blue-200 transition-all shadow-md hover:shadow-md"
+                        onClick={() => navigate(`/recipes/${recipe._id}`)}
+                      >
+                        <div className="relative aspect-[16/10]">
+                          <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                          
+                          <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full bg-white/90 shadow-md border border-slate-200 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5
+                            ${(recipe.matchPercentage || 0) >= 80 ? "text-emerald-600" : 
+                              (recipe.matchPercentage || 0) >= 50 ? "text-amber-600" : "text-blue-600"}
+                          `}>
+                            <CheckCircle2 size={12} />
+                            {recipe.matchPercentage}% match
+                          </div>
+                        </div>
                         
-                        <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full bg-white/90 shadow-md border border-slate-200 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5
-                          ${(recipe.matchPercentage || 0) >= 80 ? "text-emerald-600" : 
-                            (recipe.matchPercentage || 0) >= 50 ? "text-amber-600" : "text-blue-600"}
-                        `}>
-                          <CheckCircle2 size={12} />
-                          {recipe.matchPercentage}% match
+                        <div className="p-6 space-y-4">
+                          <h2 className="text-xl font-bold text-slate-800 tracking-tight line-clamp-1 group-hover:text-blue-600 transition-colors uppercase">{recipe.name}</h2>
+                          <div className="flex items-center gap-4 text-slate-400">
+                            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest"><Clock size={12} className="text-blue-500"/> {recipe.prepMinutes} min</span>
+                            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest"><Flame size={12} className="text-blue-500"/> {Math.round(recipe.calories || 0)} kcal</span>
+                          </div>
+                          <div className="space-y-2">
+                             <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <span>Match score</span>
+                                <span className="text-blue-600">{recipe.matchedCount} ingredients</span>
+                             </div>
+                             <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-200">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${recipe.matchPercentage}%` }}
+                                  transition={{ duration: 1, ease: "circOut" }}
+                                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-400" />
+                             </div>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed">{recipe.description}</p>
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest group-hover:translate-x-2 transition-transform">
+                            View Recipe <ArrowRight size={14} />
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="p-6 space-y-4">
-                        <h2 className="text-xl font-bold text-slate-800 tracking-tight line-clamp-1 group-hover:text-blue-600 transition-colors uppercase">{recipe.name}</h2>
-                        <div className="flex items-center gap-4 text-slate-400">
-                          <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest"><Clock size={12} className="text-blue-500"/> {recipe.prepMinutes} min</span>
-                          <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest"><Flame size={12} className="text-blue-500"/> {recipe.calories} kcal</span>
-                        </div>
-                        <div className="space-y-2">
-                           <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                              <span>Match score</span>
-                              <span className="text-blue-600">{recipe.matchedCount} ingredients</span>
-                           </div>
-                           <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-200">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${recipe.matchPercentage}%` }}
-                                transition={{ duration: 1, ease: "circOut" }}
-                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-400" />
-                           </div>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed">{recipe.description}</p>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                          View Recipe <ArrowRight size={14} />
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
               ) : (
                 <motion.div 
                   key="empty"

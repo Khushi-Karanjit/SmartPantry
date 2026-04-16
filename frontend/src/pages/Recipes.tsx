@@ -16,7 +16,11 @@ import {
   X, 
   Plus, 
   Minus,
-  Sparkles
+  Sparkles,
+  Sunrise,
+  Sun,
+  Moon,
+  Apple
 } from "lucide-react";
 
 type RecipeMatch = Recipe & { match: number };
@@ -214,9 +218,9 @@ export default function Recipes() {
                     {recipe.mealType && (
                       <div className="absolute top-4 left-4 flex gap-2">
                         <span className="px-3 py-1.5 glass bg-black/40 text-white text-[9px] font-black uppercase tracking-widest rounded-lg border border-white/10 flex items-center gap-1.5">
-                          {recipe.mealType.toLowerCase() === "breakfast" ? "🌅" : 
-                           recipe.mealType.toLowerCase() === "lunch" ? "☀️" : 
-                           recipe.mealType.toLowerCase() === "dinner" ? "🌙" : "🍎"} {recipe.mealType}
+                          {recipe.mealType.toLowerCase() === "breakfast" ? <Sunrise size={12} /> : 
+                           recipe.mealType.toLowerCase() === "lunch" ? <Sun size={12} /> : 
+                           recipe.mealType.toLowerCase() === "dinner" ? <Moon size={12} /> : <Apple size={12} />} {recipe.mealType}
                         </span>
                       </div>
                     )}

@@ -8,7 +8,7 @@ const userPreferenceSchema = new mongoose.Schema(
     allergies: { type: [String], default: [] },
     excludeIngredients: { type: [String], default: [] },
     maxPrepMinutes: { type: Number, default: 0, min: 0 },
-    mealsPerDay: { type: Number, default: 2, min: 1, max: 3 },
+    mealsPerDay: { type: Number, default: 2, min: 1, max: 4 },
     repeatLimitWeekly: { type: Number, default: 2, min: 1, max: 7 },
     
     // Biometric Data for TDEE/BMR

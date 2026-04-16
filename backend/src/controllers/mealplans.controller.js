@@ -52,11 +52,11 @@ function recipeMatchesPreferences(recipe, prefs) {
  * - Pantry Score (0.0 to 1.0)
  * - Nutritional Fit (0.0 to 1.0)
  */
-function scoreRecipe(recipe, pantryMap, prefs) {
+function scoreRecipe(recipe, pantryMap, prefs, currentTarget) {
   const ingredients = recipe.ingredients || [];
   if (!ingredients.length) return { totalScore: 0, missing: [] };
 
-  // 1. Pantry Score (70% weight)
+  // 1. Pantry Score (35% weight - Lowered to prioritize nutritional "non-randomness")
   let matched = 0;
   const missing = [];
   ingredients.forEach((ing) => {
@@ -77,25 +77,38 @@ function scoreRecipe(recipe, pantryMap, prefs) {
   });
   const pantryScore = matched / ingredients.length;
 
-  // 2. Nutritional Fit (30% weight)
-  // Target per meal = Target / (MealsPerDay)
-  const mealsPerDay = prefs.mealsPerDay || 2;
-  const tCal = (prefs.caloriesTarget || 2000) / mealsPerDay;
+  // 2. Nutritional Fit (65% weight - The "Target-First" driver)
+  const mealsPerDay = Math.max(1, prefs.mealsPerDay || 2);
+  const tCal = currentTarget || (prefs.caloriesTarget || 2000) / mealsPerDay;
   const tProt = (prefs.proteinTarget || 0) / mealsPerDay;
   
+  const servings = Math.max(1, recipe.servings || 1);
+  const calPerServing = (recipe.calories || 0) / servings;
+  const protPerServing = (recipe.protein || 0) / servings;
+
   let nutritionFit = 1;
   if (tCal > 0) {
-    const calDiff = Math.abs(recipe.calories - tCal) / tCal;
-    nutritionFit -= Math.min(0.5, calDiff * 0.5);
-  }
-  if (tProt > 0) {
-    const protDiff = Math.abs(recipe.protein - tProt) / tProt;
-    nutritionFit -= Math.min(0.5, protDiff * 0.5);
+    const calDiff = (calPerServing - tCal) / tCal;
+    const absDiff = Math.abs(calDiff);
+    
+    // Strict Symmetric Penalty: ±15% is the goal window per meal
+    if (absDiff > 0.15) {
+       // Deep penalty for being too high OR too low
+       nutritionFit -= Math.min(1.0, absDiff * 2.5); 
+    } else {
+       // Plateaus at high score near zero diff
+       nutritionFit -= absDiff * 0.5;
+    }
   }
 
-  // Final Score with slight randomness for variety
-  const randomness = Math.random() * 0.1;
-  const totalScore = (pantryScore * 0.7 + Math.max(0, nutritionFit) * 0.3) + randomness;
+  if (tProt > 0) {
+    const protDiff = Math.abs(protPerServing - tProt) / tProt;
+    nutritionFit -= Math.min(0.2, protDiff * 0.2);
+  }
+
+  // Final Score with minimal randomness to ensure repeatability (non-randomness)
+  const randomness = Math.random() * 0.02; 
+  const totalScore = (pantryScore * 0.35 + Math.max(0, nutritionFit) * 0.65) + randomness;
 
   return { totalScore, missing };
 }
@@ -140,42 +153,121 @@ async function generatePlan(req, res, next) {
       return res.status(400).json({ message: "No recipes match your preferences. Try adjusting your diet or prep time." });
     }
 
-    // Score all available recipes
-    const candidateRecipes = filtered.map((recipe) => {
-      const { totalScore, missing } = scoreRecipe(recipe, pantryMap, prefs);
-      return { recipe, score: totalScore, missing };
-    }).sort((a, b) => b.score - a.score);
+    // Scoring is now handled adaptively within the meal generation loop below
 
-    const mealsPerDay = Math.max(1, Math.min(3, prefs.mealsPerDay || 2));
+
+    const mealsPerDay = Math.max(1, Math.min(4, prefs.mealsPerDay || 2));
     const repeatLimit = Math.max(1, Math.min(7, prefs.repeatLimitWeekly || 2));
-    const mealTypes = mealsPerDay === 3 ? ["Breakfast", "Lunch", "Dinner"] : ["Lunch", "Dinner"];
+    
+    let mealTypes = ["Lunch", "Dinner"];
+    if (mealsPerDay === 1) mealTypes = ["Dinner"];
+    else if (mealsPerDay === 3) mealTypes = ["Breakfast", "Lunch", "Dinner"];
+    else if (mealsPerDay === 4) mealTypes = ["Breakfast", "Lunch", "Afternoon Snack", "Dinner"];
 
     const usageCount = new Map();
     const days = [];
+    const totalTarget = prefs.caloriesTarget || 2000;
 
     for (let d = 0; d < 7; d += 1) {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + d);
 
-      const dayMealsIds = new Set(); // Prevent same recipe twice in one day
-      const meals = mealTypes.map((mealType) => {
-        // Find best candidate not already used today and within weekly limit
-        let chosen = candidateRecipes.find((item) => {
-          const id = item.recipe._id.toString();
-          return !dayMealsIds.has(id) && (usageCount.get(id) || 0) < repeatLimit;
-        });
+      let daySuccess = false;
+      let dayMeals = [];
+      let attempts = 0;
 
-        // Fallback if everyone is used up
-        if (!chosen) chosen = candidateRecipes[0];
+      // Smart Retry Loop for each day (up to 3 attempts to hit ±10%)
+      while (!daySuccess && attempts < 3) {
+        let remainingCal = totalTarget;
+        const currentUsage = new Map(usageCount);
+        const dayMealsIds = new Set();
+        const tempMeals = [];
 
-        const recipeId = chosen.recipe._id.toString();
-        usageCount.set(recipeId, (usageCount.get(recipeId) || 0) + 1);
-        dayMealsIds.add(recipeId);
+        // FALLBACK: On 3rd attempt, relax prep time and filter constraints
+        const availableRecipes = attempts < 2 
+            ? filtered 
+            : allRecipes.filter(r => r.status === 'published' && (!prefs.cuisines?.length || prefs.cuisines.some(c => r.cuisine === c || r.cuisine === 'Universal')));
 
-        return { mealType, recipeId: chosen.recipe._id };
-      });
+        // 1. Plan Main Meals
+        for (let i = 0; i < mealTypes.length; i++) {
+          const mealType = mealTypes[i];
+          const remainingMeals = mealTypes.length - i;
+          const currentTarget = remainingCal / remainingMeals;
 
-      days.push({ date, meals });
+          const candidates = availableRecipes.map(recipe => {
+            const { totalScore } = scoreRecipe(recipe, pantryMap, prefs, currentTarget);
+            return { recipe, score: totalScore };
+          }).sort((a, b) => b.score - a.score);
+
+          let chosen = candidates.find((item) => {
+            const id = item.recipe._id.toString();
+            return !dayMealsIds.has(id) && (currentUsage.get(id) || 0) < repeatLimit;
+          });
+
+          // Tier 2: If no perfect match, ignore weekly repeatLimit but STILL enforce daily uniqueness
+          if (!chosen) {
+            chosen = candidates.find((item) => !dayMealsIds.has(item.recipe._id.toString()));
+          }
+
+          // Tier 3: absolute fallback
+          if (!chosen) chosen = candidates[0];
+
+          const rId = chosen.recipe._id.toString();
+          currentUsage.set(rId, (currentUsage.get(rId) || 0) + 1);
+          dayMealsIds.add(rId);
+          
+          const calPerS = (chosen.recipe.calories || 0) / Math.max(1, chosen.recipe.servings || 1);
+          
+          // PORTION SCALING: Calculate required servings to hit currentTarget
+          let sCount = 1;
+          if (calPerS > 0 && calPerS < currentTarget * 0.8) {
+             sCount = Math.min(2, Math.round(currentTarget / calPerS)); 
+          }
+
+          remainingCal -= calPerS * sCount;
+          tempMeals.push({ mealType, recipeId: chosen.recipe._id, servingsCount: sCount });
+        }
+
+        // 2. Back-filling
+        if (remainingCal > totalTarget * 0.10) {
+            const snacks = availableRecipes.filter(r => {
+                const cal = (r.calories || 0) / Math.max(1, r.servings || 1);
+                return cal > 50 && cal <= remainingCal * 1.5; 
+            }).map(recipe => {
+                const { totalScore } = scoreRecipe(recipe, pantryMap, prefs, remainingCal);
+                return { recipe, score: totalScore };
+            }).sort((a, b) => b.score - a.score);
+
+            if (snacks.length) {
+                const snack = snacks.find(s => !dayMealsIds.has(s.recipe._id.toString()));
+                if (snack) {
+                    const rId = snack.recipe._id.toString();
+                    currentUsage.set(rId, (currentUsage.get(rId) || 0) + 1);
+                    const calPerSSnack = (snack.recipe.calories || 0) / Math.max(1, snack.recipe.servings || 1);
+                    
+                    let sCountSnack = 1;
+                    if (calPerSSnack < remainingCal * 0.7) {
+                        sCountSnack = Math.min(2, Math.round(remainingCal / calPerSSnack));
+                    }
+
+                    remainingCal -= calPerSSnack * sCountSnack;
+                    tempMeals.push({ mealType: "Side/Snack", recipeId: snack.recipe._id, servingsCount: sCountSnack });
+                }
+            }
+        }
+
+        const totalDayCal = totalTarget - remainingCal;
+        const variance = Math.abs(totalDayCal - totalTarget) / totalTarget;
+
+        if (variance <= 0.15 || attempts === 2) { 
+          daySuccess = true;
+          dayMeals = tempMeals;
+          for (const [id, count] of currentUsage.entries()) usageCount.set(id, count);
+        }
+        attempts++;
+      }
+
+      days.push({ date, meals: dayMeals });
     }
 
     // Recalculate Global Shopping List

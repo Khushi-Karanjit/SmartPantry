@@ -44,19 +44,19 @@ async function sendAlertEmail(user, alerts) {
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-      <h2 style="color: #6366f1;">SmartPantry Alert</h2>
-      <p>Hi ${user.username},</p>
-      <p>Some items in your pantry need your attention:</p>
+      <h2 style="color: #6366f1;">Smart Pantry Status</h2>
+      <p style="color: #64748b;">Hi ${user.username},</p>
+      <p>The system has identified items in your pantry that require immediate attention:</p>
       <ul>${alertListHtml}</ul>
-      <p>Check your dashboard for more details.</p>
+      <p style="margin-top: 24px;">Please review your dashboard for comprehensive inventory management.</p>
       <hr style="border: 0; border-top: 1px solid #e2e8f0;" />
-      <p style="font-size: 0.8rem; color: #64748b;">This is an automated message from SmartPantry.</p>
+      <p style="font-size: 0.8rem; color: #64748b;">Automated Status Update • SmartPantry Intelligent Systems</p>
     </div>
   `;
 
   return sendEmail({
     to: user.email,
-    subject: `SmartPantry: ${alerts.length} New Alerts`,
+    subject: `Smart Pantry Status: Action Required`,
     html,
   });
 }

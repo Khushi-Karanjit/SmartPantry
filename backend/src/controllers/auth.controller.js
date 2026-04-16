@@ -52,17 +52,18 @@ async function register(req, res, next) {
     try {
       const welcomeHtml = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
-          <div style="background: #2563eb; padding: 30px; text-align: center;">
-            <h1 style="color: white; margin: 0;">Welcome to SmartPantry! 🥘</h1>
+          <div style="background: #2563eb; padding: 40px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Smart Pantry Status</h1>
+            <p style="color: #bfdbfe; margin: 8px 0 0 0;">Welcome to the future of inventory management</p>
           </div>
-          <div style="padding: 30px; color: #374151;">
-            <h2 style="color: #111827;">Hello ${user.username},</h2>
-            <p>We're thrilled to have you on board! Your SmartPantry account has been successfully created.</p>
-            <p>With SmartPantry, you can now:</p>
+          <div style="padding: 40px; color: #374151;">
+            <p>Hi ${user.username},</p>
+            <p>Thank you for choosing SmartPantry. Your account is now active and the intelligent monitoring system has been initialized.</p>
+            <p>Here is what you can expect from your new Status Briefings:</p>
             <ul style="padding-left: 20px;">
-              <li>Track your inventory with high-density precision</li>
-              <li>Get AI-optimized recipe suggestions</li>
-              <li>Receive automated 30-minute kitchen audits</li>
+              <li>Receive automated daily 8:00 AM status reports</li>
+              <li>Real-time expiration alerts for all ingredients</li>
+              <li>Intelligent shopping lists based on usage</li>
             </ul>
             <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
               <p style="margin: 0;"><strong>Active Email:</strong> ${user.email}</p>

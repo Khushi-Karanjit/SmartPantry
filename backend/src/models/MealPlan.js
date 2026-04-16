@@ -4,6 +4,7 @@ const mealSchema = new mongoose.Schema(
   {
     mealType: { type: String, required: true },
     recipeId: { type: mongoose.Schema.Types.ObjectId, ref: "Recipe", required: true },
+    servingsCount: { type: Number, default: 1 },
   },
   { _id: false }
 );

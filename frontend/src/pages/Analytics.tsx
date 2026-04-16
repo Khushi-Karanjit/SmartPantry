@@ -225,9 +225,9 @@ export default function Analytics() {
                         <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><ClipboardList size={14} /> Weekly Nutrition Summary</h4>
                         <div className="grid grid-cols-2 xl:grid-cols-4 gap-8">
                            {[
-                             { label: "TOTAL CALORIES", val: report.nutrition.weeklyCalories.toLocaleString(), suffix: "kcal" },
-                             { label: "TOTAL PROTEIN", val: report.nutrition.weeklyProtein.toLocaleString(), suffix: "g" },
-                             { label: "DAILY AVERAGE", val: report.nutrition.avgDailyCals.toLocaleString(), suffix: "kcal/d" },
+                             { label: "TOTAL CALORIES", val: Math.round(report.nutrition.weeklyCalories).toLocaleString(), suffix: "kcal" },
+                             { label: "TOTAL PROTEIN", val: report.nutrition.weeklyProtein.toFixed(1), suffix: "g" },
+                             { label: "DAILY AVERAGE", val: Math.round(report.nutrition.avgDailyCals).toLocaleString(), suffix: "kcal/d" },
                              { label: "STATUS", val: "STABLE", suffix: "" }
                            ].map(n => (
                               <div key={n.label} className="space-y-1">
@@ -382,7 +382,7 @@ export default function Analytics() {
                    <div className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[8px] font-bold text-blue-600 uppercase tracking-widest">Live Data</div>
                 </div>
                 
-                <div className="h-[350px] w-full mt-4">
+                <div className="h-[350px] w-full mt-4 relative">
                    <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={data.nutritionHistory}>
                         <defs>
@@ -401,7 +401,12 @@ export default function Analytics() {
                           dy={15}
                         />
                         <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-10} />
-                         <ReTooltip content={<CustomTooltip />} cursor={{stroke: 'rgba(59,130,246,0.1)', strokeWidth: 2}} />
+                         <ReTooltip 
+                           content={<CustomTooltip />} 
+                           cursor={{stroke: 'rgba(59,130,246,0.1)', strokeWidth: 2}} 
+                           isAnimationActive={false}
+                           allowEscapeViewBox={{ x: true, y: true }}
+                         />
                         <Area type="monotone" dataKey="calories" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCal)" />
                       </AreaChart>
                    </ResponsiveContainer>
@@ -432,7 +437,7 @@ export default function Analytics() {
                    </div>
                 </div>
 
-                <div className="h-[350px] w-full mt-4">
+                <div className="h-[350px] w-full mt-4 relative">
                    <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={data.nutritionHistory.slice(-7)}>
                         <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="rgba(255,255,255,0.03)" />
@@ -445,7 +450,12 @@ export default function Analytics() {
                           dy={15}
                         />
                         <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-10} />
-                        <ReTooltip content={<CustomTooltip />} cursor={{fill: 'rgba(0,0,0,0.02)'}} />
+                        <ReTooltip 
+                          content={<CustomTooltip />} 
+                          cursor={{fill: 'rgba(0,0,0,0.02)'}} 
+                          isAnimationActive={false}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                        />
                         <Bar dataKey="protein" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={24} />
                         <Line type="monotone" dataKey="carbs" stroke="#3b82f6" strokeWidth={4} dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }} />
                         <Line type="monotone" dataKey="fat" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#ffffff' }} />
@@ -513,7 +523,9 @@ function CustomTooltip({ active, payload, label }: any) {
           {payload.map((p: any, i: number) => (
             <div key={i} className="flex items-center justify-between gap-8">
                <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">{p.name}</span>
-               <span className="text-lg font-bold tracking-tight" style={{ color: p.color || p.fill }}>{p.value}</span>
+               <span className="text-lg font-bold tracking-tight" style={{ color: p.color || p.fill }}>
+                 {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}{p.name !== 'calories' ? 'g' : ''}
+               </span>
             </div>
           ))}
         </div>

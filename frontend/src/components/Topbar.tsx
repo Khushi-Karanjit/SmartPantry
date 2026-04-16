@@ -1,4 +1,4 @@
-import { Menu } from "lucide-react";
+import { Menu, Smile } from "lucide-react";
 import { motion } from "framer-motion";
 import { getUser } from "../auth/auth";
 import NotificationBell from "./NotificationBell";
@@ -36,11 +36,11 @@ export default function Topbar({
               <h1 className="text-xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
                 Hello, <span className="text-primary font-black uppercase tracking-tight">{user?.username ?? "User"}</span>
                 <motion.span 
-                  animate={{ rotate: [0, 20, 0] }} 
-                  transition={{ repeat: Infinity, duration: 2, repeatDelay: 1 }}
-                  className="inline-block origin-bottom-right"
+                  animate={{ scale: [1, 1.1, 1] }} 
+                  transition={{ repeat: Infinity, duration: 4 }}
+                  className="text-blue-500"
                 >
-                  👋
+                  <Smile size={24} strokeWidth={2.5} />
                 </motion.span>
               </h1>
               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">

@@ -18,7 +18,8 @@ import {
   Sparkles, ShoppingCart, CheckCircle2,
   Calendar, Settings2, AlertCircle, Activity, User2,
   Plus, ArrowRight, Target, Database, Terminal,
-  Clock, Loader2
+  Clock, Loader2,
+  Sunrise, Sun, Moon, Apple, Cookie, Utensils
 } from "lucide-react";
 
 const DEFAULT_PREFS: Preferences = {
@@ -28,8 +29,12 @@ const DEFAULT_PREFS: Preferences = {
   caloriesTarget: 2000, proteinTarget: 150, carbsTarget: 200, fatTarget: 70,
 };
 
-const MEAL_ICONS: Record<string, string> = {
-  breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍎",
+const MEAL_ICONS: Record<string, React.ReactNode> = {
+  breakfast: <Sunrise size={20} className="text-blue-500" />,
+  lunch: <Sun size={20} className="text-amber-500" />,
+  snack: <Apple size={20} className="text-rose-500" />,
+  "afternoon snack": <Cookie size={20} className="text-orange-500" />,
+  dinner: <Moon size={20} className="text-indigo-500" />,
 };
 
 function joinList(list: string[]) { return list.join(", "); }
@@ -135,13 +140,20 @@ export default function MealPlanner() {
     currentDay.meals.forEach(m => {
       const r = m.recipeId;
       if (r && typeof r !== "string") {
-        cal += r.calories || 0;
-        p += r.protein || 0;
-        c += r.carbs || 0;
-        f += r.fat || 0;
+        const servings = Math.max(1, r.servings || 1);
+        const multiplier = (m as any).servingsCount || 1;
+        cal += ((r.calories || 0) / servings) * multiplier;
+        p += ((r.protein || 0) / servings) * multiplier;
+        c += ((r.carbs || 0) / servings) * multiplier;
+        f += ((r.fat || 0) / servings) * multiplier;
       }
     });
-    return { cal, p, c, f };
+    return { 
+      cal: Math.round(cal), 
+      p: Number(p.toFixed(1)), 
+      c: Number(c.toFixed(1)), 
+      f: Number(f.toFixed(1)) 
+    };
   }, [currentDay]);
 
   async function restockItem(item: ShoppingList["items"][number]) {
@@ -237,6 +249,22 @@ export default function MealPlanner() {
                              <input type="number" value={prefs.height || ""} onChange={e => setPrefs({...prefs, height: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold" />
                           </div>
                        </div>
+                       
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Age (Years)</label>
+                             <input type="number" value={prefs.age || ""} onChange={e => setPrefs({...prefs, age: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Gender</label>
+                             <select value={prefs.gender} onChange={e => setPrefs({...prefs, gender: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer">
+                               <option value="">Select...</option>
+                               <option value="male">Male</option>
+                               <option value="female">Female</option>
+                             </select>
+                          </div>
+                       </div>
+
                        <div className="space-y-2">
                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Activity Level</label>
                           <select value={prefs.activityLevel} onChange={e => setPrefs({...prefs, activityLevel: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer">
@@ -245,6 +273,7 @@ export default function MealPlanner() {
                             <option value="light">Lightly Active</option>
                             <option value="moderate">Moderately Active</option>
                             <option value="active">Very Active</option>
+                            <option value="very_active">Extra Active</option>
                           </select>
                        </div>
                     </div>
@@ -284,6 +313,7 @@ export default function MealPlanner() {
                           <select value={prefs.mealsPerDay} onChange={e => setPrefs({...prefs, mealsPerDay: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer">
                             <option value={2}>2 meals a day</option>
                             <option value={3}>3 meals a day</option>
+                            <option value={4}>4 meals a day</option>
                           </select>
                        </div>
                     </div>
@@ -386,7 +416,7 @@ export default function MealPlanner() {
                                <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
                                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-xl group-hover:bg-blue-50 transition-colors">
-                                        {MEAL_ICONS[meal.mealType.toLowerCase()] || "🍴"}
+                                        {MEAL_ICONS[meal.mealType.toLowerCase()] || <Utensils size={20} className="text-slate-400" />}
                                      </div>
                                      <div>
                                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">MEAL</p>
@@ -397,7 +427,14 @@ export default function MealPlanner() {
                                </div>
 
                                <div className="space-y-1">
-                                  <Link to={`/recipes/${recipe._id}`} className="text-lg font-bold text-slate-900 tracking-tight hover:text-blue-600 transition-colors line-clamp-1 uppercase">{recipe.name}</Link>
+                                  <div className="flex items-center justify-between gap-4">
+                                     <Link to={`/recipes/${recipe._id}`} className="text-lg font-bold text-slate-900 tracking-tight hover:text-blue-600 transition-colors line-clamp-1 uppercase flex-1">{recipe.name}</Link>
+                                     {((meal as any).servingsCount || 1) !== 1 && (
+                                        <div className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-100 text-[9px] font-black text-emerald-600 uppercase tracking-tighter shrink-0 ring-1 ring-emerald-200">
+                                           {(meal as any).servingsCount}x portion
+                                        </div>
+                                     )}
+                                  </div>
                                   <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                                      <Clock size={12} className="text-blue-400" /> {recipe.prepMinutes || 20}m prep
                                   </div>
@@ -405,10 +442,10 @@ export default function MealPlanner() {
 
                                <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-50">
                                   {[
-                                    { k: "KCAL", v: recipe.calories || 0 },
-                                    { k: "P", v: `${recipe.protein || 0}G` },
-                                    { k: "C", v: `${recipe.carbs || 0}G` },
-                                    { k: "F", v: `${recipe.fat || 0}G` }
+                                    { k: "KCAL", v: Math.round(((recipe.calories || 0) / Math.max(1, recipe.servings || 1)) * ((meal as any).servingsCount || 1)) },
+                                    { k: "P", v: `${(((recipe.protein || 0) / Math.max(1, recipe.servings || 1)) * ((meal as any).servingsCount || 1)).toFixed(1)}G` },
+                                    { k: "C", v: `${(((recipe.carbs || 0) / Math.max(1, recipe.servings || 1)) * ((meal as any).servingsCount || 1)).toFixed(1)}G` },
+                                    { k: "F", v: `${(((recipe.fat || 0) / Math.max(1, recipe.servings || 1)) * ((meal as any).servingsCount || 1)).toFixed(1)}G` }
                                   ].map(m => (
                                     <div key={m.k} className="text-center">
                                        <p className="text-[11px] font-bold text-slate-900 leading-none">{m.v}</p>
@@ -459,7 +496,7 @@ export default function MealPlanner() {
                          </div>
                       </div>
                    ) : (
-                      <div className="space-y-3">
+                      <div className="max-h-[500px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                         {shoppingList.items.map((item, idx) => {
                           const done = restockedItems.has(item.name);
                           return (

@@ -199,7 +199,7 @@ export default function RecipeDetail() {
                             </div>
                             <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-5">
                                 <Flame size={16} className="text-blue-500" />
-                                <span className="text-lg font-bold text-slate-800">{recipe.calories || "---"}</span>
+                                <span className="text-lg font-bold text-slate-800">{recipe.calories ? Math.round(recipe.calories / Math.max(1, recipe.servings || 1)) : "---"}</span>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Calories</label>
                             </div>
                             <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-4">

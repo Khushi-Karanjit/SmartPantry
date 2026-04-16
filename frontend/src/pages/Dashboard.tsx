@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { formatFullTimestamp } from "../utils/timeUtils";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
@@ -19,20 +20,7 @@ import {
   Activity
 } from "lucide-react";
 
-function formatRelative(metaIso: string) {
-  const d = new Date(metaIso);
-  const now = new Date();
-  const diffMs = d.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) {
-    const daysAgo = Math.abs(diffDays);
-    return daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`;
-  }
-  if (diffDays === 0) return "today";
-  if (diffDays === 1) return "in 1 day";
-  return `in ${diffDays} days`;
-}
+// Removed local formatRelative in favor of centralized timeUtils.ts
 
 function alertUi(type: "expired" | "expiring" | "low") {
   if (type === "expired") return { cls: "bg-red-500/10 text-red-500 border-red-500/20", icon: <CircleAlert size={16} /> };
@@ -64,7 +52,19 @@ export default function Dashboard() {
   }, []);
 
   const stats = data?.stats;
-  const topComposition = useMemo(() => (data?.composition || []).slice(0, 4), [data]);
+  const topComposition = useMemo(() => {
+    const raw = data?.composition || [];
+    if (raw.length <= 5) return raw;
+    
+    const top = raw.slice(0, 5);
+    const topSum = top.reduce((s, x) => s + x.percent, 0);
+    const othersPercent = Math.max(0, 100 - topSum);
+    
+    if (othersPercent > 0) {
+      return [...top, { category: "OTHERS", count: 0, percent: othersPercent }];
+    }
+    return top;
+  }, [data]);
 
   const container = {
     hidden: { opacity: 0 },
@@ -114,24 +114,33 @@ export default function Dashboard() {
             <motion.div variants={item} className="glass-card space-y-6">
                <div className="flex justify-between items-center px-1">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">Notices & Alerts</h3>
-                  <a href="#" className="text-xs font-bold text-blue-600 tracking-widest hover:text-blue-700 transition-colors uppercase">View All</a>
+                  <button 
+                    onClick={() => nav('/notifications')} 
+                    className="text-xs font-bold text-blue-600 tracking-widest hover:text-blue-700 transition-colors uppercase cursor-pointer"
+                  >
+                    View All
+                  </button>
                </div>
                
                <div className="space-y-3">
                  {data.reminders?.length ? (
-                   data.reminders.slice(0, 3).map((r, idx) => {
-                     const ui = alertUi(r.type);
-                     const suffix = r.meta && (r.type === "expired" || r.type === "expiring") ? ` (${formatRelative(r.meta)})` : "";
-                      return (
-                        <motion.div whileHover={{ scale: 1.01 }} key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${ui.cls.replace('/10', '/30')}`}>
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FAFDFF] border border-slate-200/50">{ui.icon}</div>
-                            <span className="text-sm font-bold text-slate-700">{r.text}{suffix}</span>
-                          </div>
-                          <ChevronRight size={16} className="text-slate-300" />
-                        </motion.div>
-                      );
-                   })
+                    data.reminders.slice(0, 3).map((r, idx) => {
+                      const ui = alertUi(r.type);
+                      const timeData = r.meta ? formatFullTimestamp(r.meta) : { relative: "", exact: "" };
+                      const suffix = timeData.relative ? ` (${timeData.relative})` : "";
+                       return (
+                         <motion.div whileHover={{ scale: 1.01 }} key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${ui.cls.replace('/10', '/30')}`} title={timeData.exact}>
+                           <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FAFDFF] border border-slate-200/50">{ui.icon}</div>
+                             <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-700">{r.text}{suffix}</span>
+                                {timeData.exact && <span className="text-[10px] text-slate-400 font-medium">{timeData.exact}</span>}
+                             </div>
+                           </div>
+                           <ChevronRight size={16} className="text-slate-300" />
+                         </motion.div>
+                       );
+                    })
                  ) : (
                     <div className="p-8 text-center text-slate-400 flex flex-col items-center gap-2">
                        <CheckCircle2 size={32} className="text-green-500/20" />

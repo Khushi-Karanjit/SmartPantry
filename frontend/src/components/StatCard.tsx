@@ -17,8 +17,8 @@ export default function StatCard(props: {
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">{props.title}</p>
-          <p className="text-3xl font-black text-white tracking-tight">{props.value}</p>
-          <p className="text-sm text-slate-400 font-medium">{props.sub}</p>
+          <p className="text-3xl font-black text-slate-900 tracking-tight">{props.value}</p>
+          <p className="text-sm text-slate-500 font-medium">{props.sub}</p>
         </div>
         <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-[inset_0_0_15px_rgba(59,130,246,0.1)]">
           {props.icon}

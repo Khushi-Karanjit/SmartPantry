@@ -173,15 +173,15 @@ export default function AdminLogs() {
               animate={{ height: "auto", opacity: 1 }}
               className="px-2 overflow-hidden"
              >
-                <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+                <div className="bg-[#FAFDFF] border border-slate-200 text-slate-900 rounded-3xl p-6 sm:p-8 space-y-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative">
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* User Filter */}
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">User Operator</label>
+                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">User Operator</label>
                          <select 
                           value={filters.userId}
                           onChange={(e) => handleFilterChange("userId", e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none cursor-pointer"
                          >
                             <option value="">All Users</option>
                             {allUsers.map(u => (
@@ -192,11 +192,11 @@ export default function AdminLogs() {
 
                       {/* Recipe Filter */}
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Target Recipe</label>
+                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Target Recipe</label>
                          <select 
                           value={filters.recipeId}
                           onChange={(e) => handleFilterChange("recipeId", e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none cursor-pointer"
                          >
                             <option value="">All Recipes</option>
                             {allRecipes.map(r => (
@@ -207,12 +207,12 @@ export default function AdminLogs() {
 
                       {/* Time Window */}
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Time Window</label>
+                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Time Window</label>
                          <div className="flex items-center gap-2">
                             <select 
                               value={filters.days}
                               onChange={(e) => handleFilterChange("days", e.target.value)}
-                              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none cursor-pointer"
                             >
                                <option value="">All Time</option>
                                <option value="1">Last 24 Hours</option>
@@ -223,7 +223,7 @@ export default function AdminLogs() {
                             {(filters.userId || filters.recipeId || filters.days) && (
                               <button 
                                 onClick={clearFilters}
-                                className="p-3 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                                className="p-3 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 rounded-xl transition-colors"
                               >
                                 <X size={20} />
                               </button>

@@ -138,7 +138,7 @@ exports.getDashboardSummary = async (req, res) => {
 
     const totalItems = await totalItemsPromise;
 
-    const capacityMax = 50;
+    const capacityMax = 100;
     const capacityUsedPercent = Math.min(100, Math.round((totalItems / capacityMax) * 100));
 
     return res.json({

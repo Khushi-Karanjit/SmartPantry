@@ -53,6 +53,7 @@ function getIconByKey(key: string) {
     case "barista": return Coffee;
     case "italian": return Soup;
     case "gym": return Dumbbell;
+    case "nepali-staples": return Soup;
     default: return Utensils;
   }
 }
@@ -66,6 +67,7 @@ function getGradientByKey(key: string) {
     case "barista": return "from-amber-900/20 to-orange-900/10";
     case "italian": return "from-emerald-600/20 to-rose-600/20";
     case "gym": return "from-blue-600/20 to-indigo-600/20";
+    case "nepali-staples": return "from-red-600/30 to-amber-500/30";
     default: return "from-slate-500/10 to-slate-500/5";
   }
 }

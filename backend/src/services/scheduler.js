@@ -6,18 +6,18 @@ const { generateFullReportEmail } = require("./report.email.template");
 const { sendEmail } = require("./email.service");
 
 /**
- * Initializes the weekly email scheduler
+ * Initializes the automated email scheduler
  */
 const initScheduler = () => {
-  // 1. Weekly Recap: Every Sunday at Midnight
-  cron.schedule("0 0 * * 0", async () => {
-    console.log("[Scheduler] Starting Weekly Email Broadcast...");
+  // 1. Weekly Recap: Every Sunday at 08:00 AM
+  cron.schedule("0 8 * * 0", async () => {
+    console.log("[Scheduler] Starting Weekly Smart Pantry Status Broadcast...");
     try {
       const users = await User.find({ isActive: true });
       for (const user of users) {
         try {
           const htmlReport = await generateWeeklySummary(user._id, user.username);
-          await sendEmail(user.email, "Your Weekly Culinary Recap 🥘", htmlReport);
+          await sendEmail(user.email, "Smart Pantry Status: Weekly Recap", htmlReport);
         } catch (err) {
           console.error(`[Scheduler] Failed to send weekly report to ${user.email}:`, err);
         }
@@ -28,16 +28,16 @@ const initScheduler = () => {
     }
   });
 
-  // 2. Daily Kitchen Pulse: Every day at Midnight
-  cron.schedule("0 0 * * *", async () => {
-    console.log("[Scheduler] Starting Daily Kitchen Pulse Broadcast...");
+  // 2. Daily Status Briefing: Every day at 08:00 AM
+  cron.schedule("0 8 * * *", async () => {
+    console.log("[Scheduler] Starting Daily Smart Pantry Status Broadcast...");
     try {
       const users = await User.find({ isActive: true });
       for (const user of users) {
         try {
           const reportData = await getFullReportData(user._id);
           const htmlReport = generateFullReportEmail(reportData, user.username);
-          await sendEmail(user.email, "Daily Kitchen Status Audit 🏛️", htmlReport);
+          await sendEmail(user.email, "Smart Pantry Status", htmlReport);
         } catch (err) {
           console.error(`[Scheduler] Failed to send daily report to ${user.email}:`, err);
         }
@@ -48,27 +48,9 @@ const initScheduler = () => {
     }
   });
 
-  // 3. High-Frequency Audit: Every 30 minutes
-  cron.schedule("*/30 * * * *", async () => {
-    console.log("[Scheduler] Starting 30-Minute High-Frequency Audit...");
-    try {
-      const users = await User.find({ isActive: true });
-      for (const user of users) {
-        try {
-          const reportData = await getFullReportData(user._id);
-          const htmlReport = generateFullReportEmail(reportData, user.username);
-          await sendEmail(user.email, "High-Frequency Kitchen Pulse Audit ⚡", htmlReport);
-        } catch (err) {
-          console.error(`[Scheduler] Failed to send 30-min audit to ${user.email}:`, err);
-        }
-      }
-      console.log("[Scheduler] 30-Minute Audit Complete.");
-    } catch (error) {
-      console.error("[Scheduler] Critical Error in 30-Minute Audit:", error);
-    }
-  });
+  // High-frequency (30m) audit removed as per professional tone refinement.
 
-  console.log("[Scheduler] All Email Jobs Initialized.");
+  console.log("[Scheduler] All Professional Email Jobs Initialized (8 AM Daily/Weekly).");
 };
 
 module.exports = { initScheduler };

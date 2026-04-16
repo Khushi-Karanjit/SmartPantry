@@ -14,6 +14,10 @@ export type AuthUser = {
   role: "user" | "admin";
 };
 
+export const PANTRY_UNITS = [
+  "pcs", "unit", "kg", "g", "lbs", "oz", "ml", "l", "cup", "tbsp", "tsp", "pack", "can", "bottle", "clove", "pinch"
+];
+
 export type Recipe = {
   _id: string;
   name: string;
@@ -81,6 +85,8 @@ export type PaginationMeta = {
   totalPages: number;
   hasMore: boolean;
   expiringSoonCount?: number;
+  expiredCount?: number;
+  freshCount?: number;
 };
 
 export type PantryItem = {
@@ -103,6 +109,14 @@ export type Ingredient = {
   defaultUnit: string;
   shelfLifeDays: number;
   isCustom: boolean;
+};
+
+export type PantryPreset = {
+  _id: string;
+  key: string;
+  title: string;
+  description: string;
+  items: { name: string; category: string; quantity: number; unit: string }[];
 };
 
 export type LoginResponse = {
@@ -448,14 +462,14 @@ export function getPantryItemsApi(params?: {
   return request<{ items: PantryItem[]; pagination: PaginationMeta }>(url, { method: "GET" });
 }
 
-export function addPantryItemApi(payload: { ingredientId: string; quantity: number; unit: string }) {
+export function addPantryItemApi(payload: { ingredientId: string; quantity: number; unit: string; presetKey?: string }) {
   return request<{ item: PantryItem }>("/pantry", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export function updatePantryItemApi(id: string, payload: { ingredientId: string; quantity: number; unit: string }) {
+export function updatePantryItemApi(id: string, payload: { ingredientId: string; quantity: number; unit: string; presetKey?: string }) {
   return request<{ item: PantryItem }>(`/pantry/${id}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
@@ -476,6 +490,10 @@ export function restockPantryItemApi(id: string) {
 
 export function getCategoriesApi() {
   return request<{ categories: Category[] }>("/categories", { method: "GET" });
+}
+
+export function getPresetsApi() {
+  return request<{ presets: PantryPreset[] }>("/pantry/presets", { method: "GET" });
 }
 
 export type Category = {

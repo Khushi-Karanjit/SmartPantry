@@ -101,7 +101,25 @@ async function initializePantry(req, res) {
       });
     }
 
-    if (docs.length > 0) await PantryItem.insertMany(docs);
+    if (docs.length > 0) {
+      for (const doc of docs) {
+        await PantryItem.findOneAndUpdate(
+          { userId: doc.userId, ingredientId: doc.ingredientId },
+          { 
+            $inc: { quantity: doc.quantity },
+            $set: { 
+              name: doc.name.toUpperCase(), 
+              unit: doc.unit, 
+              categoryId: doc.categoryId, 
+              addedAt: new Date(),
+              presetKey: doc.presetKey,
+              source: doc.source
+            } 
+          },
+          { upsert: true, new: true }
+        );
+      }
+    }
     return res.status(201).json({ message: "Pantry initialized successfully", count: docs.length });
   } catch (err) {
     console.error(err);
@@ -133,7 +151,7 @@ async function getPantryItems(req, res) {
     const mappedAll = allItems.map(it => {
       const cat = it.categoryId || {};
       const ingredient = it.ingredientId || {};
-      const shelfLife = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
+      const shelfLife = ingredient.shelfLifeDays || cat.shelfLifeDays || 30;
       const base = it.addedAt || it.createdAt || new Date();
       return { _id: it._id, expiryDate: computeExpiryIso(base, shelfLife) };
     });
@@ -143,12 +161,11 @@ async function getPantryItems(req, res) {
       return d >= 0 && d <= 2;
     }).length;
 
-    // Build Query
-    let query = { userId };
-    const status = (req.query.status || "").trim();
+    const expiredTotal = mappedAll.filter(it => daysUntil(it.expiryDate) < 0).length;
+    const freshTotal = mappedAll.filter(it => daysUntil(it.expiryDate) > 2).length;
 
-    // If a specific status is requested (expiring/expired), we might need to filter the mapped results
-    // For now, let's keep search/category query as is
+    // 1. Build Base Query (Tab, Search, Category)
+    let query = { userId };
     if (tab !== "all") query.presetKey = tab;
     if (search) query.name = { $regex: search, $options: "i" };
     if (category !== "All") {
@@ -156,55 +173,43 @@ async function getPantryItems(req, res) {
       if (catDoc) query.categoryId = catDoc._id;
     }
 
-    // Fetch and Map for current page
-    let finalItems = [];
-    let totalCount = 0;
+    // 2. Fetch matching items (unpaginated for status filtering)
+    const matchedItems = await PantryItem.find(query)
+      .populate("categoryId")
+      .populate("ingredientId")
+      .sort({ addedAt: -1, createdAt: -1 })
+      .lean();
 
-    if (status === "expiring") {
-      // Special case: we filter the FULL Mapped results by expiration
-      // Then we paginate that array. (Good for smaller pantries)
-      const fullMapped = allItems.map((it) => {
-        const cat = it.categoryId || {};
-        const ingredient = it.ingredientId || {};
-        const shelfLife = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
-        const base = it.addedAt || it.createdAt || new Date();
-        return {
-          ...it,
-          name: ingredient.name || it.name,
-          category: ingredient.category || cat.name || "Other",
-          expiryDate: computeExpiryIso(base, shelfLife),
-        };
-      }).filter(it => {
+    // 3. Map with Expiry Dates
+    const mapped = matchedItems.map((it) => {
+      const cat = it.categoryId || {};
+      const ingredient = it.ingredientId || {};
+      const shelfLife = ingredient.shelfLifeDays || cat.shelfLifeDays || 30;
+      const base = it.addedAt || it.createdAt || new Date();
+      return {
+        ...it,
+        name: ingredient.name || it.name,
+        category: ingredient.category || cat.name || "Other",
+        expiryDate: computeExpiryIso(base, shelfLife),
+      };
+    });
+
+    // 4. Apply Status Filtering (if any)
+    const status = (req.query.status || "").trim();
+    let finalItems = mapped;
+    if (status) {
+      finalItems = mapped.filter(it => {
         const d = daysUntil(it.expiryDate);
-        return d >= 0 && d <= 2;
-      });
-
-      totalCount = fullMapped.length;
-      finalItems = fullMapped.slice((page - 1) * limit, page * limit);
-    } else {
-      // Normal paginated query
-      totalCount = await PantryItem.countDocuments(query);
-      const items = await PantryItem.find(query)
-        .populate("categoryId")
-        .populate("ingredientId")
-        .sort({ addedAt: -1, createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean();
-
-      finalItems = items.map((it) => {
-        const cat = it.categoryId || {};
-        const ingredient = it.ingredientId || {};
-        const shelfLife = ingredient.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
-        const base = it.addedAt || it.createdAt || new Date();
-        return {
-          ...it,
-          name: ingredient.name || it.name,
-          category: ingredient.category || cat.name || "Other",
-          expiryDate: computeExpiryIso(base, shelfLife),
-        };
+        if (status === "expiring") return d >= 0 && d <= 2;
+        if (status === "expired") return d < 0;
+        if (status === "fresh") return d > 2;
+        return true;
       });
     }
+
+    // 5. Final Pagination
+    const totalCount = finalItems.length;
+    finalItems = finalItems.slice((page - 1) * limit, page * limit);
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -215,7 +220,9 @@ async function getPantryItems(req, res) {
         totalPages,
         currentPage: page,
         limit,
-        expiringSoonCount: expiringSoonTotal
+        expiringSoonCount: expiringSoonTotal,
+        expiredCount: expiredTotal,
+        freshCount: freshTotal
       }
     });
   } catch (err) {
@@ -230,7 +237,7 @@ async function getPantryItems(req, res) {
 async function addPantryItem(req, res) {
   try {
     const userId = req.userId;
-    const { ingredientId, quantity, unit } = req.body;
+    const { ingredientId, quantity, unit, presetKey } = req.body;
     if (!ingredientId) return res.status(400).json({ message: "ingredientId is required" });
 
     const ingredient = await Ingredient.findById(ingredientId).lean();
@@ -239,16 +246,21 @@ async function addPantryItem(req, res) {
     const categoryDoc = await Category.findOne({ name: ingredient.category }).lean();
     const q = Number(quantity ?? 1);
 
-    const item = await PantryItem.create({
-      userId,
-      name: ingredient.name,
-      ingredientId: ingredient._id,
-      categoryId: categoryDoc?._id,
-      quantity: q,
-      unit: unit || ingredient.defaultUnit || "pcs",
-      addedAt: new Date(),
-      source: "manual",
-    });
+    const item = await PantryItem.findOneAndUpdate(
+      { userId, ingredientId: ingredient._id },
+      {
+        $inc: { quantity: q },
+        $set: { 
+          name: ingredient.name.toUpperCase(), 
+          categoryId: categoryDoc?._id,
+          unit: unit || ingredient.defaultUnit || "pcs",
+          addedAt: new Date(),
+          source: presetKey ? "preset" : "manual",
+          presetKey: presetKey || null
+        }
+      },
+      { upsert: true, new: true }
+    );
 
     return res.status(201).json({ item });
   } catch (err) {
@@ -264,7 +276,7 @@ async function updatePantryItem(req, res) {
   try {
     const userId = req.userId;
     const { id } = req.params;
-    const { ingredientId, quantity, unit } = req.body;
+    const { ingredientId, quantity, unit, presetKey } = req.body;
 
     const update = {};
     if (ingredientId !== undefined) {
@@ -276,8 +288,16 @@ async function updatePantryItem(req, res) {
       update.categoryId = categoryDoc?._id;
       if (unit === undefined) update.unit = ingredient.defaultUnit || "pcs";
     }
-    if (quantity !== undefined) update.quantity = Number(quantity);
+    if (quantity !== undefined) {
+      if (Number(quantity) <= 0) {
+        const deleted = await PantryItem.findOneAndDelete({ _id: id, userId }).lean();
+        if (!deleted) return res.status(404).json({ message: "Item not found" });
+        return res.json({ message: "Item reached zero quantity and was removed from pantry", deleted: true });
+      }
+      update.quantity = Number(quantity);
+    }
     if (unit !== undefined) update.unit = unit;
+    if (presetKey !== undefined) update.presetKey = presetKey;
 
     const item = await PantryItem.findOneAndUpdate({ _id: id, userId }, { $set: update }, { new: true });
     if (!item) return res.status(404).json({ message: "Item not found" });

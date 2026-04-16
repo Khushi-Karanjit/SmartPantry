@@ -13,7 +13,11 @@ const presets = [
       { name: "Active Dry Yeast", category: "Bakery", quantity: 50, unit: "grams" },
       { name: "Cocoa Powder", category: "Bakery", quantity: 200, unit: "grams" },
       { name: "Vanilla Extract", category: "Condiments", quantity: 50, unit: "ml" },
-      { name: "Baking Powder", category: "Other", quantity: 100, unit: "grams" }
+      { name: "Baking Powder", category: "Other", quantity: 100, unit: "grams" },
+      { name: "Sea Salt", category: "Spices", quantity: 200, unit: "grams" },
+      { name: "Whole Milk", category: "Dairy", quantity: 1, unit: "liter" },
+      { name: "Large Eggs", category: "Dairy", quantity: 12, unit: "pcs" },
+      { name: "Unsalted Butter", category: "Dairy", quantity: 500, unit: "grams" }
     ]
   },
   {
@@ -28,7 +32,10 @@ const presets = [
       { name: "Cumin Seeds", category: "Spices", quantity: 100, unit: "grams" },
       { name: "Cloves", category: "Spices", quantity: 30, unit: "grams" },
       { name: "Star Anise", category: "Spices", quantity: 20, unit: "grams" },
-      { name: "Paprika", category: "Spices", quantity: 50, unit: "grams" }
+      { name: "Paprika", category: "Spices", quantity: 50, unit: "grams" },
+      { name: "Garlic Powder", category: "Spices", quantity: 50, unit: "grams" },
+      { name: "Dried Oregano", category: "Spices", quantity: 30, unit: "grams" },
+      { name: "Chili Flakes", category: "Spices", quantity: 100, unit: "grams" }
     ]
   },
   {
@@ -42,7 +49,9 @@ const presets = [
       { name: "Yak Cheese", category: "Dairy", quantity: 250, unit: "grams" },
       { name: "Ghee", category: "Dairy", quantity: 500, unit: "ml" },
       { name: "Himalayan Pink Salt", category: "Spices", quantity: 1, unit: "kg" },
-      { name: "Mustang Beans", category: "Grains", quantity: 1, unit: "kg" }
+      { name: "Mustang Beans", category: "Grains", quantity: 1, unit: "kg" },
+      { name: "Buckwheat Flour (Phapar)", category: "Grains", quantity: 500, unit: "grams" },
+      { name: "Himalayan Wild Honey", category: "Other", quantity: 250, unit: "grams" }
     ]
   },
   {
@@ -56,7 +65,10 @@ const presets = [
       { name: "Nori Sheets", category: "Other", quantity: 10, unit: "pcs" },
       { name: "Sesame Oil", category: "Oils", quantity: 250, unit: "ml" },
       { name: "Bok Choy", category: "Vegetables", quantity: 3, unit: "pcs" },
-      { name: "Sriracha", category: "Condiments", quantity: 400, unit: "ml" }
+      { name: "Sriracha", category: "Condiments", quantity: 400, unit: "ml" },
+      { name: "Soy Sauce", category: "Condiments", quantity: 500, unit: "ml" },
+      { name: "Rice Vinegar", category: "Condiments", quantity: 250, unit: "ml" },
+      { name: "Fresh Ginger", category: "Vegetables", quantity: 100, unit: "grams" }
     ]
   },
   {
@@ -97,6 +109,23 @@ const presets = [
       { name: "Fresh Spinach", category: "Vegetables", quantity: 200, unit: "grams" },
       { name: "Chia Seeds", category: "Other", quantity: 200, unit: "grams" },
       { name: "Greek Yogurt", category: "Dairy", quantity: 500, unit: "grams" }
+    ]
+  },
+  {
+    key: "nepali-staples",
+    title: "Nepali Kitchen Essentials 🇳🇵",
+    description: "Daily staples for the perfect Dal-Bhat-Tarkari experience.",
+    items: [
+      { name: "Basmati Rice", category: "Grains", quantity: 2, unit: "kg" },
+      { name: "Red Lentils (Musuro)", category: "Grains", quantity: 1, unit: "kg" },
+      { name: "Mustard Oil", category: "Oils", quantity: 1, unit: "liter" },
+      { name: "Turmeric Powder", category: "Spices", quantity: 100, unit: "grams" },
+      { name: "Timmur", category: "Spices", quantity: 30, unit: "grams" },
+      { name: "Cumin & Coriander Powder", category: "Spices", quantity: 200, unit: "grams" },
+      { name: "Ginger & Garlic Paste", category: "Condiments", quantity: 250, unit: "grams" },
+      { name: "Fenugreek Seeds (Methi)", category: "Spices", quantity: 50, unit: "grams" },
+      { name: "Whole Dry Chilies", category: "Spices", quantity: 50, unit: "grams" },
+      { name: "Iodized Salt", category: "Spices", quantity: 1, unit: "kg" }
     ]
   }
 ];

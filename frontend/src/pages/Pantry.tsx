@@ -19,7 +19,16 @@ import {
   Eraser,
   Calendar,
   Box,
-  Layers
+  Layers,
+  Utensils,
+  Flame,
+  Mountain,
+  Coffee,
+  Dumbbell,
+  Cookie,
+  Soup,
+  Beef,
+  Droplets
 } from "lucide-react";
 import {
   getPantryItemsApi,
@@ -27,12 +36,15 @@ import {
   updatePantryItemApi,
   deletePantryItemApi,
   getCategoriesApi,
+  getPresetsApi,
   cleanupExpiredPantryApi,
   restockPantryItemApi,
   type PantryItem,
   type Category,
   type Ingredient,
-  type PaginationMeta
+  type PaginationMeta,
+  type PantryPreset,
+  PANTRY_UNITS
 } from "../api/api";
 
 function daysUntil(dateIso: string) {
@@ -43,11 +55,24 @@ function daysUntil(dateIso: string) {
 }
 
 function statusOf(item: PantryItem) {
-  if (!item.expiryDate) return { label: "GOOD", kind: "optimal", cls: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+  if (!item.expiryDate) return { label: "FRESH", kind: "fresh", cls: "bg-emerald-50 text-emerald-600 border-emerald-100" };
   const d = daysUntil(item.expiryDate);
   if (d < 0) return { label: "EXPIRED", kind: "expired", cls: "bg-red-50 text-red-600 border-red-100" };
   if (d <= 2) return { label: "URGENT", kind: "urgent", cls: "bg-amber-50 text-amber-600 border-amber-100" };
-  return { label: "GOOD", kind: "optimal", cls: "bg-blue-50 text-blue-600 border-blue-100" };
+  return { label: "FRESH", kind: "fresh", cls: "bg-blue-50 text-blue-600 border-blue-100" };
+}
+function getIconByKey(key: string) {
+  switch (key) {
+    case "bakery": return Cookie;
+    case "spices": return Flame;
+    case "himalayan": return Mountain;
+    case "fusion": return Utensils;
+    case "barista": return Coffee;
+    case "italian": return Soup;
+    case "gym": return Dumbbell;
+    case "nepali-staples": return Droplets; // Using Droplets for Mustard Oil/Oils staple
+    default: return Utensils;
+  }
 }
 
 export default function Pantry() {
@@ -57,8 +82,9 @@ export default function Pantry() {
   const [error, setError] = useState("");
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [presets, setPresets] = useState<PantryPreset[]>([]);
 
-  const [tab, setTab] = useState<"all" | "student" | "nepali" | "italian">("all");
+  const [tab, setTab] = useState<string>("all");
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All");
   const [page, setPage] = useState(1);
@@ -115,8 +141,18 @@ export default function Pantry() {
     }
   }
 
+  async function fetchPresets() {
+    try {
+      const res = await getPresetsApi();
+      setPresets(res.presets || []);
+    } catch (e: any) {
+      console.error("Failed to fetch presets:", e);
+    }
+  }
+
   useEffect(() => {
     fetchCategories();
+    fetchPresets();
   }, []);
 
   useEffect(() => {
@@ -166,6 +202,7 @@ export default function Pantry() {
         ingredientId: addForm.ingredient._id,
         quantity: Number(addForm.quantity) || 1,
         unit: addForm.unit || addForm.ingredient.defaultUnit || "pcs",
+        presetKey: tab === "all" ? undefined : tab
       });
       setOpenAdd(false);
       setAddForm({ category: categories[0]?.name || "", ingredient: null, quantity: 1, unit: "" });
@@ -277,67 +314,112 @@ export default function Pantry() {
           </div>
         </div>
 
-        {/* HIGH-TECH TABS */}
+        {/* HIGH-TECH TABS (DYNAMIC) */}
         <div className="flex items-center gap-2 px-2 overflow-x-auto pb-4 custom-scrollbar whitespace-nowrap">
-          {[
-            { id: "all", label: "Global Kitchen", icon: <Layers size={14}/> },
-            { id: "student", label: "Student Essentials", icon: <Box size={14}/> },
-            { id: "nepali", label: "Nepali Core", icon: <Box size={14}/> },
-            { id: "italian", label: "Italian Unit", icon: <Box size={14}/> }
-          ].map((t) => (
-            <button 
-              key={t.id}
-              onClick={() => setTab(t.id as any)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border
-                ${tab === t.id 
-                  ? "bg-slate-900 text-white border-slate-900 shadow-lg" 
-                  : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
-                }
-              `}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
+          <button 
+            onClick={() => setTab("all")}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border
+              ${tab === "all" 
+                ? "bg-slate-900 text-white border-slate-900 shadow-lg" 
+                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+              }
+            `}
+          >
+            <Layers size={14}/> GLOBAL KITCHEN
+          </button>
+
+          {presets.map((p) => {
+             const Icon = getIconByKey(p.key);
+             return (
+              <button 
+                key={p.key}
+                onClick={() => setTab(p.key)}
+                className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border
+                  ${tab === p.key 
+                    ? "bg-slate-900 text-white border-slate-900 shadow-lg scale-[1.02]" 
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                  }
+                `}
+              >
+                <Icon size={14}/> {p.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim()}
+              </button>
+             );
+          })}
         </div>
 
-        {/* URGENT TELEMETRY BANNER */}
+        {/* URGENT TELEMETRY BANNERS */}
         <AnimatePresence>
-          {pagination?.expiringSoonCount ? (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="px-2"
-            >
-              <div className="glass-card bg-amber-50 border-amber-100 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
-                    <AlertCircle size={24} />
+          <div className="space-y-4 px-2">
+            {pagination?.expiringSoonCount ? (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+              >
+                <div className="glass-card bg-amber-50 border-amber-100 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                      <AlertCircle size={24} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-amber-700 uppercase tracking-widest">Expiration Warning</div>
+                      <p className="text-xs text-slate-600 font-medium">{pagination.expiringSoonCount} items are expiring within 48 hours.</p>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-amber-700 uppercase tracking-widest">Expiration Warning</div>
-                    <p className="text-xs text-slate-600 font-medium">{pagination.expiringSoonCount} items are expiring within 48 hours.</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => { setStatus("expiring"); setPage(1); }}
-                    className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-amber-700 transition-colors shadow-md"
-                  >
-                    View Urgent Items
-                  </button>
-                  {status === "expiring" && (
+                  <div className="flex items-center gap-3">
                     <button 
-                      onClick={() => setStatus("")}
-                      className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                      onClick={() => { setStatus("expiring"); setPage(1); }}
+                      className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-amber-700 transition-colors shadow-md"
                     >
-                      Clear Filter
+                      View Urgent Items
                     </button>
-                  )}
+                    {status === "expiring" && (
+                      <button 
+                        onClick={() => setStatus("")}
+                        className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                      >
+                        Clear Filter
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ) : null}
+              </motion.div>
+            ) : null}
+
+            {pagination?.expiredCount ? (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+              >
+                <div className="glass-card bg-red-50 border-red-100 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
+                      <Trash2 size={24} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-red-700 uppercase tracking-widest">Critical Alert</div>
+                      <p className="text-xs text-slate-600 font-medium">{pagination.expiredCount} items have reached their expiration limit.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => { setStatus("expired"); setPage(1); }}
+                      className="px-5 py-2.5 rounded-xl bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 transition-colors shadow-md"
+                    >
+                      View Expired Items
+                    </button>
+                    <button 
+                      onClick={cleanupAll}
+                      className="px-5 py-2.5 rounded-xl bg-white border border-red-200 text-red-600 text-[10px] font-bold uppercase tracking-widest hover:bg-red-50 transition-colors"
+                    >
+                      Purge All
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ) : null}
+          </div>
         </AnimatePresence>
 
         {/* CONTROL SYSTEMS */}
@@ -352,10 +434,34 @@ export default function Pantry() {
             />
           </div>
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
-             <div className="h-12 flex items-center px-6 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">
-                Category Filtering
+          <div className="flex items-center gap-2 w-full md:w-auto">
+             <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner overflow-hidden">
+                {[
+                  { id: "", label: "ALL", icon: <Layers size={14}/> },
+                  { id: "fresh", label: "FRESH", icon: <Sparkles size={14}/>, count: pagination?.freshCount },
+                  { id: "expiring", label: "SOON", icon: <AlertCircle size={14}/>, count: pagination?.expiringSoonCount },
+                  { id: "expired", label: "EXPIRED", icon: <X size={14}/>, count: pagination?.expiredCount }
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setStatus(s.id); setPage(1); }}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-bold uppercase tracking-tighter transition-all relative
+                      ${status === s.id 
+                        ? "bg-white text-slate-900 shadow-md ring-1 ring-slate-200" 
+                        : "text-slate-500 hover:text-slate-900"
+                      }
+                    `}
+                  >
+                    {s.icon} <span>{s.label}</span>
+                    {s.count ? (
+                       <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] border ${status === s.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-200 text-slate-600 border-slate-300'}`}>
+                          {s.count}
+                       </span>
+                    ) : null}
+                  </button>
+                ))}
              </div>
+             
              <div className="relative flex-1 md:w-48 group">
                 <select 
                   value={category} 
@@ -581,12 +687,15 @@ export default function Pantry() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Unit</label>
-                      <input
+                      <select
                         value={openAdd ? addForm.unit : editForm.unit}
                         onChange={(e) => openAdd ? setAddForm({ ...addForm, unit: e.target.value }) : setEditForm({ ...editForm, unit: e.target.value })}
-                        placeholder="pcs, grams, etc"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
-                      />
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer"
+                      >
+                         {PANTRY_UNITS.map(u => (
+                           <option key={u} value={u}>{u}</option>
+                         ))}
+                      </select>
                     </div>
                   </div>
                 </div>
