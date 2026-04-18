@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -26,29 +27,8 @@ import {
 
 type RecipeMatch = Recipe & { match: number };
 
-function buildPantrySet(items: PantryItem[]) {
-  const set = new Set<string>();
-  items.forEach((item) => {
-    if (item.ingredientId) {
-      const id = typeof item.ingredientId === 'object' 
-        ? (item.ingredientId as any)._id 
-        : item.ingredientId;
-      set.add(String(id));
-    }
-  });
-  return set;
-}
-
-function computeMatch(recipe: Recipe, pantrySet: Set<string>) {
-  const ingredients = recipe.ingredients || [];
-  if (!ingredients.length) return 0;
-  const matched = ingredients.filter((ing) => pantrySet.has(String(ing.ingredientId))).length;
-  return Math.round((matched / ingredients.length) * 100);
-}
-
 export default function Recipes() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   
@@ -57,7 +37,7 @@ export default function Recipes() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [servings, setServings] = useState(2);
+  const [servings, setServings] = useState(1);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,11 +45,7 @@ export default function Recipes() {
   useEffect(() => {
     (async () => {
       try {
-        const [pantryRes, cuisinesRes] = await Promise.all([
-          getPantryItemsApi(),
-          listCuisinesApi(),
-        ]);
-        setPantry(pantryRes.items || []);
+        const cuisinesRes = await listCuisinesApi();
         setCuisines(cuisinesRes.cuisines || []);
       } catch (e: any) {
         console.error("Data sync error", e);
@@ -119,12 +95,12 @@ export default function Recipes() {
   );
 
   useEffect(() => {
-    if (previewRecipe) setServings(previewRecipe.servings || 2);
+    if (previewRecipe) setServings(1);
   }, [previewRecipe?._id]);
 
   function adjustServings(delta: number) {
     if (!previewRecipe) return;
-    const base = previewRecipe.servings || 2;
+    const base = previewRecipe.servings || 1;
     const next = Math.max(1, servings + delta);
     const limit = Math.max(base * 3, 8);
     setServings(Math.min(limit, next));
@@ -144,7 +120,7 @@ export default function Recipes() {
 
   function scaledQuantity(qty: number) {
     if (!previewRecipe || !qty) return qty;
-    const base = previewRecipe.servings || 2;
+    const base = previewRecipe.servings || 1;
     return Math.round((qty * servings * 100) / base) / 100;
   }
 
@@ -326,117 +302,120 @@ export default function Recipes() {
         )}
 
         {/* QUICK VIEW HUB (SIDEBAR DRAWER) */}
-        <AnimatePresence>
-          {previewId && (
-            <>
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[150] bg-slate-900/40 backdrop-blur-sm" 
-                onClick={() => setPreviewId(null)} 
-              />
-              <motion.div 
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 z-[160] w-full max-w-xl bg-white border-l border-slate-200 shadow-2xl overflow-y-auto custom-scrollbar"
-              >
-                {previewRecipe && (
-                  <div className="p-8 space-y-8">
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600"><ChefHat size={20}/></div>
-                          <div>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recipe Details</p>
-                             <p className="text-slate-800 font-bold text-sm uppercase">Detailed Overview</p>
-                          </div>
-                       </div>
-                       <button className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors" onClick={() => setPreviewId(null)}><X size={20}/></button>
-                    </div>
-
-                    <div className="relative aspect-video rounded-3xl overflow-hidden border border-slate-200 shadow-xl">
-                      <img src={previewRecipe.imageUrl || ""} className="w-full h-full object-cover" alt="" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
-                         <div className="flex items-center gap-2">
-                            <span className="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">{previewRecipe.match}% Match</span>
-                            <button 
-                                className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${previewRecipe.isSaved ? 'bg-pink-500 text-white' : 'bg-white/90 text-slate-400 hover:text-pink-500'}`}
-                                onClick={() => handleToggleSave(previewRecipe)}
-                            >
-                                <Heart size={18} fill={previewRecipe.isSaved ? "currentColor" : "none"} />
-                            </button>
+        {createPortal(
+          <AnimatePresence>
+            {previewId && (
+              <>
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[150] bg-slate-900/40 backdrop-blur-sm" 
+                  onClick={() => setPreviewId(null)} 
+                />
+                <motion.div 
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 30, stiffness: 200 }}
+                  className="fixed right-0 top-0 bottom-0 z-[160] w-full max-w-xl bg-white border-l border-slate-200 shadow-2xl overflow-y-auto custom-scrollbar"
+                >
+                  {previewRecipe && (
+                    <div className="p-8 space-y-8">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600"><ChefHat size={20}/></div>
+                            <div>
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recipe Details</p>
+                               <p className="text-slate-800 font-bold text-sm uppercase">Detailed Overview</p>
+                            </div>
                          </div>
-                         <span className="text-xs font-bold text-white px-3 py-1 bg-black/20 rounded-lg">{previewRecipe.cuisine}</span>
+                         <button className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors" onClick={() => setPreviewId(null)}><X size={20}/></button>
                       </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{previewRecipe.name}</h2>
-                      <div className="flex gap-3">
-                        <span className="px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-widest">{previewRecipe.mealType}</span>
-                        <span className="px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-widest">Verified</span>
+                      <div className="relative aspect-video rounded-3xl overflow-hidden border border-slate-200 shadow-xl">
+                        <img src={previewRecipe.imageUrl || ""} className="w-full h-full object-cover" alt="" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <span className="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">{previewRecipe.match}% Match</span>
+                              <button 
+                                  className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${previewRecipe.isSaved ? 'bg-pink-500 text-white' : 'bg-white/90 text-slate-400 hover:text-pink-500'}`}
+                                  onClick={() => handleToggleSave(previewRecipe)}
+                              >
+                                  <Heart size={18} fill={previewRecipe.isSaved ? "currentColor" : "none"} />
+                              </button>
+                           </div>
+                           <span className="text-xs font-bold text-white px-3 py-1 bg-black/20 rounded-lg">{previewRecipe.cuisine}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                       {[
-                         { label: "Prep", value: `${previewRecipe.prepMinutes} MIN`, icon: <Clock size={14}/> },
-                         { label: "Calories", value: `${Math.round(previewRecipe.calories * (servings / (previewRecipe.servings || 2)) || 0)} kcal`, icon: <Flame size={14} className="text-orange-500" /> },
-                         { label: "Protein", value: `${Math.round(previewRecipe.protein * (servings / (previewRecipe.servings || 2)) || 0)}g`, icon: <div className="font-bold text-[10px]">P</div> },
-                         { label: "Carbs", value: `${Math.round(previewRecipe.carbs * (servings / (previewRecipe.servings || 2)) || 0)}g`, icon: <div className="font-bold text-[10px]">C</div> },
-                         { label: "Fat", value: `${Math.round(previewRecipe.fat * (servings / (previewRecipe.servings || 2)) || 0)}g`, icon: <div className="font-bold text-[10px]">F</div> },
-                         { label: "Servings", value: `${servings}`, icon: <Layers size={14}/> }
-                       ].map((s, i) => (
-                         <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-2 text-center p-3">
-                            <div className="text-slate-500 mb-0.5">{s.icon}</div>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</span>
-                            <span className="text-xs font-bold text-slate-800">{s.value}</span>
-                         </div>
-                       ))}
-                    </div>
+                      <div className="space-y-4">
+                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{previewRecipe.name}</h2>
+                        <div className="flex gap-3">
+                          <span className="px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-widest">{previewRecipe.mealType}</span>
+                          <span className="px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-widest">Verified</span>
+                        </div>
+                      </div>
 
-                    <div className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-6 space-y-6 shadow-md">
-                       <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-                          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ingredients needed</h4>
-                          <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1 border border-slate-200">
-                             <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-slate-50 transition-colors shadow-md" onClick={() => adjustServings(-1)}><Minus size={14} /></button>
-                             <span className="text-xs font-bold w-4 text-center text-slate-800">{servings}</span>
-                             <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-slate-50 transition-colors shadow-md" onClick={() => adjustServings(1)}><Plus size={14} /></button>
-                          </div>
-                       </div>
-                       <ul className="space-y-4">
-                         {(previewRecipe.ingredients || []).map((ing, idx) => (
-                           <li key={idx} className="flex items-center justify-between group">
-                             <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-200 group-hover:bg-blue-500 transition-colors" />
-                                <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{ing.name}</span>
-                             </div>
-                             <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors tracking-widest">{scaledQuantity(ing.quantity)} {ing.unit}</span>
-                           </li>
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                         {[
+                           { label: "Prep", value: `${previewRecipe.prepMinutes} MIN`, icon: <Clock size={14}/> },
+                           { label: "Calories", value: `${Math.round(previewRecipe.calories * (servings / (previewRecipe.servings || 1)) || 0)} kcal`, icon: <Flame size={14} className="text-orange-500" /> },
+                           { label: "Protein", value: `${Math.round(previewRecipe.protein * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">P</div> },
+                           { label: "Carbs", value: `${Math.round(previewRecipe.carbs * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">C</div> },
+                           { label: "Fat", value: `${Math.round(previewRecipe.fat * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">F</div> },
+                           { label: "Servings", value: `${servings}`, icon: <Layers size={14}/> }
+                         ].map((s, i) => (
+                           <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-2 text-center p-3">
+                              <div className="text-slate-500 mb-0.5">{s.icon}</div>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</span>
+                              <span className="text-xs font-bold text-slate-800">{s.value}</span>
+                           </div>
                          ))}
-                       </ul>
-                    </div>
+                      </div>
 
-                    <div className="flex gap-4 pt-4 pb-12">
-                      <Link className="flex-1 btn-futuristic py-4 text-center text-sm shadow-blue-100 flex items-center justify-center gap-2" to={`/recipes/${previewRecipe._id}`}>
-                        Start Cooking <ArrowRight size={16} />
-                      </Link>
-                      <button 
-                        className={`flex-1 py-4 text-center text-sm font-bold rounded-2xl border transition-all ${previewRecipe.isSaved ? 'bg-pink-50 border-pink-100 text-pink-600' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'}`} 
-                        onClick={() => handleToggleSave(previewRecipe)}
-                      >
-                        {previewRecipe.isSaved ? "Favourited" : "Add to Favourites"}
-                      </button>
+                      <div className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-6 space-y-6 shadow-md">
+                         <div className="flex items-center justify-between border-b border-slate-50 pb-4">
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ingredients needed</h4>
+                            <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1 border border-slate-200">
+                               <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-slate-50 transition-colors shadow-md" onClick={() => adjustServings(-1)}><Minus size={14} /></button>
+                               <span className="text-xs font-bold w-4 text-center text-slate-800">{servings}</span>
+                               <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-slate-50 transition-colors shadow-md" onClick={() => adjustServings(1)}><Plus size={14} /></button>
+                            </div>
+                         </div>
+                         <ul className="space-y-4">
+                           {(previewRecipe.ingredients || []).map((ing, idx) => (
+                             <li key={idx} className="flex items-center justify-between group">
+                               <div className="flex items-center gap-3">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-blue-200 group-hover:bg-blue-500 transition-colors" />
+                                  <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{ing.name}</span>
+                               </div>
+                               <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors tracking-widest">{scaledQuantity(ing.quantity)} {ing.unit}</span>
+                             </li>
+                           ))}
+                         </ul>
+                      </div>
+
+                      <div className="flex gap-4 pt-4 pb-12">
+                        <Link className="flex-1 btn-futuristic py-4 text-center text-sm shadow-blue-100 flex items-center justify-center gap-2" to={`/recipes/${previewRecipe._id}`}>
+                          Start Cooking <ArrowRight size={16} />
+                        </Link>
+                        <button 
+                          className={`flex-1 py-4 text-center text-sm font-bold rounded-2xl border transition-all ${previewRecipe.isSaved ? 'bg-pink-50 border-pink-100 text-pink-600' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'}`} 
+                          onClick={() => handleToggleSave(previewRecipe)}
+                        >
+                          {previewRecipe.isSaved ? "Favourited" : "Add to Favourites"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
       </div>
     </DashboardLayout>
   );

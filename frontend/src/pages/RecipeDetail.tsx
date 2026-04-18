@@ -17,11 +17,13 @@ import {
   Minus,
   Zap,
   Loader2,
-  Heart
+  Heart,
+  ShoppingCart,
+  ShoppingBag
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
-import { getRecipeApi, createCookingLogApi, toggleSaveRecipeApi } from "../api/api";
+import { getRecipeApi, createCookingLogApi, toggleSaveRecipeApi, addRecipeToShoppingListApi } from "../api/api";
 import type { Recipe } from "../api/api";
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -41,9 +43,11 @@ export default function RecipeDetail() {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [servings, setServings] = useState(2);
+    const [servings, setServings] = useState(1);
     const [cooking, setCooking] = useState(false);
     const [cooked, setCooked] = useState(false);
+    const [addingToList, setAddingToList] = useState(false);
+    const [addedToList, setAddedToList] = useState(false);
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => { if (id) fetchRecipe(id); }, [id]);
@@ -53,7 +57,7 @@ export default function RecipeDetail() {
             setLoading(true);
             const res = await getRecipeApi(recipeId);
             setRecipe(res.recipe);
-            setServings(res.recipe.servings || 2);
+            setServings(res.recipe.servings || 1);
         } catch { setError(true); } 
         finally { setLoading(false); }
     };
@@ -79,6 +83,20 @@ export default function RecipeDetail() {
             console.error("Log error", e);
         } finally {
             setCooking(false);
+        }
+    };
+
+    const handleAddToShoppingList = async () => {
+        if (!recipe || !recipe.missingIngredients?.length || addingToList) return;
+        try {
+            setAddingToList(true);
+            await addRecipeToShoppingListApi(recipe.missingIngredients);
+            setAddedToList(true);
+            setTimeout(() => setAddedToList(false), 3000);
+        } catch (err) {
+            console.error("Shopping list error", err);
+        } finally {
+            setAddingToList(false);
         }
     };
 
@@ -244,6 +262,45 @@ export default function RecipeDetail() {
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Servings</label>
                             </div>
                         </motion.div>
+
+                        {/* MISSING INGREDIENTS ADVISORY */}
+                        {recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
+                            <motion.section variants={item} className="bg-amber-50/50 border border-amber-100 shadow-md rounded-3xl p-8 space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                                            <ShoppingBag size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900">Missing Items</h3>
+                                            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">{recipe.missingIngredients.length} ingredients needed</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={handleAddToShoppingList}
+                                        disabled={addingToList || addedToList}
+                                        className={`p-2 rounded-xl transition-all ${addedToList ? "bg-emerald-500 text-white" : "bg-white border border-amber-200 text-amber-600 hover:bg-amber-100"}`}
+                                    >
+                                        {addingToList ? <Loader2 size={18} className="animate-spin" /> : addedToList ? <CheckCircle size={18} /> : <ShoppingCart size={18} />}
+                                    </button>
+                                </div>
+                                <div className="space-y-3">
+                                    {recipe.missingIngredients.map((ing, i) => (
+                                        <div key={i} className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest">
+                                            <span className="text-slate-600">{ing.name}</span>
+                                            <span className="text-amber-600">{ing.quantity} {ing.unit}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button 
+                                    onClick={handleAddToShoppingList}
+                                    disabled={addingToList || addedToList}
+                                    className={`w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${addedToList ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200" : "bg-amber-500 text-white shadow-lg shadow-amber-200 hover:bg-amber-600"}`}
+                                >
+                                    {addingToList ? "Adding to list..." : addedToList ? "Added to List!" : "Add Missing to Shopping List"}
+                                </button>
+                            </motion.section>
+                        )}
 
                         <motion.section variants={item} className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl space-y-8 p-8">
                             <div className="flex items-center gap-3 border-b border-slate-50 pb-4">

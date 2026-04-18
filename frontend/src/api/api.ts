@@ -40,6 +40,8 @@ export type Recipe = {
   views?: number;
   matchPercentage?: number;
   matchedCount?: number;
+  missingIngredients?: { name: string; quantity: number; unit: string; ingredientId?: string }[];
+  isSaved?: boolean;
 };
 
 export type Preferences = {
@@ -68,12 +70,6 @@ export type MealPlan = {
     date: string;
     meals: { mealType: string; recipeId: Recipe }[];
   }[];
-};
-
-export type ShoppingList = {
-  _id: string;
-  weekStart: string;
-  items: { name: string; quantity: number; unit: string; ingredientId?: string }[];
 };
 
 export type PaginationMeta = {
@@ -434,13 +430,6 @@ export function generateMealPlanApi() {
   );
 }
 
-export function getCurrentShoppingListApi() {
-  return request<{ shoppingList: ShoppingList | null }>(
-    "/shopping-lists/current",
-    { method: "GET" }
-  );
-}
-
 export function getPantryItemsApi(params?: { 
   page?: number; 
   limit?: number; 
@@ -678,5 +667,56 @@ export function processVideoApi(videoUrl: string) {
   return request<{ recipe: Recipe }>("/recipes/process-video", {
     method: "POST",
     body: JSON.stringify({ videoUrl }),
+  });
+}
+
+// ────────── Shopping List ──────────
+
+export type ShoppingListItem = {
+  name: string;
+  quantity: number;
+  unit: string;
+  ingredientId?: string;
+  source: "manual" | "meal-plan";
+  checked?: boolean;
+};
+
+export type ShoppingList = {
+  _id: string;
+  userId: string;
+  weekStart: string;
+  items: ShoppingListItem[];
+};
+
+export function getCurrentShoppingListApi() {
+  return request<{ shoppingList: ShoppingList | null }>(
+    "/shopping-lists/current",
+    { method: "GET" }
+  );
+}
+
+export function addRecipeToShoppingListApi(ingredients: any[]) {
+  return request<{ shoppingList: ShoppingList }>("/shopping-lists/add-recipe", {
+    method: "POST",
+    body: JSON.stringify({ ingredients }),
+  });
+}
+
+export function updateShoppingListItemApi(index: number, data: { quantity?: number; checked?: boolean }) {
+  return request<{ shoppingList: ShoppingList }>(`/shopping-lists/item/${index}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function removeShoppingListItemApi(index: number) {
+  return request<{ shoppingList: ShoppingList }>(`/shopping-lists/item/${index}`, {
+    method: "DELETE"
+  });
+}
+
+export function clearShoppingListApi() {
+  return request<{ message: string }>("/shopping-lists/clear", {
+    method: "DELETE"
   });
 }

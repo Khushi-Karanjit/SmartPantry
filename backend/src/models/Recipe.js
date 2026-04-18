@@ -22,7 +22,7 @@ const recipeSchema = new mongoose.Schema(
     protein: { type: Number, default: 0, min: 0 },
     carbs: { type: Number, default: 0, min: 0 },
     fat: { type: Number, default: 0, min: 0 },
-    servings: { type: Number, default: 2, min: 1 },
+    servings: { type: Number, default: 1, min: 1 },
     ingredients: { type: [ingredientSchema], default: [] },
     steps: {
       type: [{

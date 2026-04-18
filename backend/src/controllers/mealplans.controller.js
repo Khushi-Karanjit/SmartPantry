@@ -3,6 +3,7 @@ const Recipe = require("../models/Recipe");
 const PantryItem = require("../models/PantryItem");
 const UserPreference = require("../models/UserPreference");
 const ShoppingList = require("../models/ShoppingList");
+const { calculateMissingIngredients, normalizeName } = require("../utils/pantryHelper");
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -13,9 +14,6 @@ function startOfWeek(date) {
   return d;
 }
 
-function normalizeName(name) {
-  return String(name || "").trim().toLowerCase();
-}
 
 function buildPantryMap(items) {
   const map = new Map();
@@ -143,7 +141,7 @@ async function generatePlan(req, res, next) {
         caloriesTarget: 2000,
       };
 
-    const pantryItems = await PantryItem.find({ userId: req.userId }).lean();
+    const pantryItems = await PantryItem.find({ userId: req.userId }).populate("ingredientId").lean();
     const pantryMap = buildPantryMap(pantryItems);
 
     const allRecipes = await Recipe.find({ status: "published" }).lean();
@@ -303,15 +301,45 @@ async function generatePlan(req, res, next) {
       }
     }
 
-    let shoppingList = null;
-    if (missingItems.length) {
-      shoppingList = await ShoppingList.findOneAndUpdate(
-        { userId: req.userId, weekStart },
-        { $set: { items: missingItems, source: "meal-plan" } },
-        { new: true, upsert: true }
-      );
-    } else {
-      await ShoppingList.findOneAndDelete({ userId: req.userId, weekStart });
+    let shoppingList = await ShoppingList.findOne({ userId: req.userId, weekStart });
+    
+    if (missingItems.length || (shoppingList && shoppingList.items.length)) {
+      if (!shoppingList) {
+        shoppingList = new ShoppingList({ userId: req.userId, weekStart, items: [] });
+      }
+
+      // Filter out OLD meal-plan items, but keep MANUAL items
+      const manualItems = shoppingList.items.filter(it => it.source === "manual");
+      
+      // Combine with new meal-plan items
+      const newMealPlanItems = missingItems.map(it => ({ ...it, source: "meal-plan" }));
+      
+      // Merge: If a manual item has the same ID as a meal plan item, we handle that by prioritize manual but summing? 
+      // Simplified: Just concat for now, or deduplicate. 
+      // Deduplication is better.
+      const finalItems = [...manualItems];
+      newMealPlanItems.forEach(newItem => {
+        const key = newItem.ingredientId ? newItem.ingredientId.toString() : normalizeName(newItem.name);
+        const exists = finalItems.find(fi => {
+            const fiKey = fi.ingredientId ? fi.ingredientId.toString() : normalizeName(fi.name);
+            return fiKey === key;
+        });
+        if (!exists) finalItems.push(newItem);
+        // else: manual item already covers it, or we could sum quantities. Let's sum for accuracy.
+        else exists.quantity = Math.max(exists.quantity, newItem.quantity); 
+      });
+
+      shoppingList.items = finalItems;
+      await shoppingList.save();
+    } else if (shoppingList) {
+      // If no missing items AND no manual items, we might delete. But let's keep it if manual exists.
+      shoppingList.items = shoppingList.items.filter(it => it.source === "manual");
+      if (shoppingList.items.length === 0) {
+        await ShoppingList.findByIdAndDelete(shoppingList._id);
+        shoppingList = null;
+      } else {
+        await shoppingList.save();
+      }
     }
 
     let plan = await MealPlan.findOneAndUpdate(

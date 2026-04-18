@@ -6,6 +6,8 @@ const itemSchema = new mongoose.Schema(
     quantity: { type: Number, default: 1, min: 0 },
     unit: { type: String, default: "" },
     ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "Ingredient", default: null },
+    source: { type: String, enum: ["manual", "meal-plan"], default: "meal-plan" },
+    checked: { type: Boolean, default: false }
   },
   { _id: false }
 );

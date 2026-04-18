@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, 
   Search, 
-  ChefHat, 
   Clock, 
   Flame, 
   ArrowRight,
@@ -19,7 +18,7 @@ export default function SavedRecipes() {
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {

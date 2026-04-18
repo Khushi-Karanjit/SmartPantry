@@ -8,12 +8,9 @@ import {
     Pizza,
     Activity,
     Layers,
-    Cpu,
-    Zap,
-    ShieldCheck,
     Terminal,
     Database,
-    Binary,
+    Zap,
     ArrowRight,
     Mountain,
     Coffee,
@@ -75,7 +72,6 @@ function getGradientByKey(key: string) {
 export default function PantrySetup() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
   const [initializing, setInitializing] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -91,7 +87,6 @@ export default function PantrySetup() {
 
   const fetchPresets = async () => {
     try {
-      setLoading(true);
       setError("");
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -103,8 +98,6 @@ export default function PantrySetup() {
       if (res.ok) setPresets(data.presets || []);
     } catch {
       setError("Network error while loading sets.");
-    } finally {
-      setLoading(false);
     }
   };
 

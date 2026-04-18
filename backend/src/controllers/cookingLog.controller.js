@@ -2,6 +2,7 @@ const CookingLog = require("../models/CookingLog");
 const Recipe = require("../models/Recipe");
 const PantryItem = require("../models/PantryItem");
 const mongoose = require("mongoose");
+const { normalizeCulinaryUnit } = require("../utils/culinaryMapping");
 
 /**
  * Log a meal as cooked and deduct ingredients from pantry
@@ -42,7 +43,8 @@ exports.createLog = async (req, res) => {
     for (const ing of recipe.ingredients) {
       if (!ing.ingredientId) continue;
 
-      const neededQty = (ing.quantity || 0) * (servings / (recipe.servings || 1));
+      const rawNeededQty = (ing.quantity || 0) * (servings / (recipe.servings || 1));
+      const { quantity: neededQty } = normalizeCulinaryUnit(ing.name, ing.unit, rawNeededQty);
       
       // Find the pantry item for this ingredient
       const pantryItem = await PantryItem.findOne({ 

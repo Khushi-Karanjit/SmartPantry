@@ -3,6 +3,8 @@ const SavedRecipe = require("../models/SavedRecipe");
 const { YoutubeTranscript } = require("youtube-transcript");
 const aiService = require("../services/ai.service");
 const { UNIT_MAPPING, normalizeCulinaryUnit } = require("../utils/culinaryMapping");
+const PantryItem = require("../models/PantryItem");
+const { calculateMissingIngredients } = require("../utils/pantryHelper");
 
 function extractVideoId(url) {
   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
@@ -139,7 +141,20 @@ async function getRecipe(req, res, next) {
     // Check if saved
     const isSaved = await SavedRecipe.exists({ userId: req.userId, recipeId: recipe._id });
     
-    res.json({ recipe: { ...recipe, isSaved: !!isSaved } });
+    // Calculate missing ingredients if user is logged in
+    let missingIngredients = [];
+    if (req.userId) {
+      const pantryItems = await PantryItem.find({ userId: req.userId }).populate("ingredientId").lean();
+      missingIngredients = calculateMissingIngredients(recipe.ingredients || [], pantryItems);
+    }
+    
+    res.json({ 
+      recipe: { 
+        ...recipe, 
+        isSaved: !!isSaved,
+        missingIngredients
+      } 
+    });
   } catch (err) {
     next(err);
   }

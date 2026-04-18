@@ -13,6 +13,7 @@ import {
   PlusSquare,
   Sparkles,
   Heart,
+  ShoppingCart
 } from "lucide-react";
 import { clearAuth, getUser } from "../auth/auth";
 
@@ -43,6 +44,7 @@ export default function Sidebar({
     { label: "Favourites", path: "/recipes/favourites", icon: <Heart size={20} /> },
     { label: "Find Recipes", path: "/recipe-suggester", icon: <Sparkles size={20} /> },
     { label: "Meal Planner", path: "/meal-planner", icon: <CalendarDays size={20} /> },
+    { label: "Shopping List", path: "/shopping-list", icon: <ShoppingCart size={20} /> },
     { label: "Analytics", path: "/analytics", icon: <BarChart size={20} /> },
     { label: "Profile", path: "/profile", icon: <User size={20} /> },
   ];

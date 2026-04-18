@@ -17,6 +17,7 @@ import AdminLogs from "./pages/AdminLogs";
 import AdminManageRecipes from "./pages/AdminManageRecipes";
 import SavedRecipes from "./pages/SavedRecipes";
 import Profile from "./pages/Profile";
+import ShoppingList from "./pages/ShoppingList";
 import RecipeSuggester from "./pages/RecipeSuggester";
 import Analytics from "./pages/Analytics";
 import Notifications from "./pages/Notifications";
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/admin/logs" element={<ProtectedRoute requiredRole="admin"><AdminLogs /></ProtectedRoute>} />
         <Route path="/pantry" element={<ProtectedRoute><Pantry /></ProtectedRoute>} />
         <Route path="/recipes/favourites" element={<ProtectedRoute><SavedRecipes /></ProtectedRoute>} />
+        <Route path="/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
         <Route path="/recipes" element={<ProtectedRoute><Recipes /></ProtectedRoute>} />
         <Route path="/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
         <Route path="/recipe-suggester" element={<ProtectedRoute><RecipeSuggester /></ProtectedRoute>} />
