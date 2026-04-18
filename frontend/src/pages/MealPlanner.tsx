@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 
 const DEFAULT_PREFS: Preferences = {
-  diet: "", cuisines: [], allergies: [], excludeIngredients: [],
+  diet: "", cuisines: [],
   maxPrepMinutes: 0, mealsPerDay: 2, repeatLimitWeekly: 2,
   height: 0, weight: 0, age: 0, gender: "", activityLevel: "",
   caloriesTarget: 2000, proteinTarget: 150, carbsTarget: 200, fatTarget: 70,
@@ -47,9 +47,6 @@ function shortDay(value: string) {
 }
 
 export default function MealPlanner() {
-  const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
-  const [allergiesText, setAllergiesText] = useState("");
-  const [excludeText, setExcludeText] = useState("");
   const [plan, setPlan] = useState<MealPlan | null>(null);
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +56,7 @@ export default function MealPlanner() {
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [restockingAll, setRestockingAll] = useState(false);
   const [restockedItems, setRestockedItems] = useState<Set<string>>(new Set());
+  const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
 
   useEffect(() => {
     let active = true;
@@ -71,8 +69,6 @@ export default function MealPlanner() {
         if (!active) return;
         const loaded = prefsRes.preferences || DEFAULT_PREFS;
         setPrefs(loaded);
-        setAllergiesText(joinList(loaded.allergies));
-        setExcludeText(joinList(loaded.excludeIngredients));
         setPlan(planRes.plan);
         setShoppingList(planRes.shoppingList);
       } catch (e: any) {
@@ -118,7 +114,7 @@ export default function MealPlanner() {
     setSaving(true);
     setError(null);
     try {
-      const payload: Preferences = { ...prefs, allergies: splitList(allergiesText), excludeIngredients: splitList(excludeText) };
+      const payload: Preferences = { ...prefs };
       const saved = await savePreferencesApi(payload);
       setPrefs(saved.preferences);
       const generated = await generateMealPlanApi();
@@ -329,9 +325,9 @@ export default function MealPlanner() {
                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Dietary Preference</label>
                           <select value={prefs.diet} onChange={e => setPrefs({...prefs, diet: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer">
                             <option value="">None</option>
-                            <option value="vegetarian">Vegetarian</option>
-                            <option value="vegan">Vegan</option>
-                            <option value="keto">Keto</option>
+                            <option value="Vegetarian">Vegetarian</option>
+                            <option value="Vegan">Vegan</option>
+                            <option value="Keto">Keto</option>
                           </select>
                        </div>
                        <div className="space-y-2">

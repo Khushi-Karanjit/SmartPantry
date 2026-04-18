@@ -47,8 +47,6 @@ export type Recipe = {
 export type Preferences = {
   diet: string;
   cuisines: string[];
-  allergies: string[];
-  excludeIngredients: string[];
   maxPrepMinutes: number;
   mealsPerDay: number;
   repeatLimitWeekly: number;
@@ -227,6 +225,7 @@ export type DashboardSummary = {
     totalItems: number;
     expiringSoonCount: number;
     expiredCount: number;
+    wasteScore: number;
     capacityUsedPercent: number;
   };
   reminders: {
@@ -359,12 +358,13 @@ export function toggleSaveRecipeApi(recipeId: string) {
    Recipe APIs
 ========================= */
 
-export function listRecipesApi(params?: { page?: number; limit?: number; search?: string; cuisine?: string; hasVideo?: string }) {
+export function listRecipesApi(params?: { page?: number; limit?: number; search?: string; cuisine?: string; diet?: string; hasVideo?: string }) {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
   if (params?.search) query.set("search", params.search);
   if (params?.cuisine) query.set("cuisine", params.cuisine);
+  if (params?.diet) query.set("diet", params.diet);
   if (params?.hasVideo && params.hasVideo !== "all") query.set("hasVideo", params.hasVideo);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<{ recipes: Recipe[]; pagination: PaginationMeta }>(`/recipes${suffix}`, { method: "GET" });

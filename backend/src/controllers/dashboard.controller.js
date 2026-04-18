@@ -172,12 +172,14 @@ exports.getDashboardSummary = async (req, res) => {
     const capacityUsedPercent = Math.min(100, Math.round((totalItems / capacityMax) * 100));
 
     const expiredCount = expiryAgg.filter(x => x.isExpired).length;
+    const wasteScore = totalItems > 0 ? Math.round((expiredCount / totalItems) * 100) : 0;
 
     return res.json({
       stats: {
         totalItems,
         expiringSoonCount,
         expiredCount,
+        wasteScore,
         capacityUsedPercent,
       },
       reminders,

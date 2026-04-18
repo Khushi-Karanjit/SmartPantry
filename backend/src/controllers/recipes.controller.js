@@ -14,7 +14,7 @@ function extractVideoId(url) {
 
 async function listRecipes(req, res, next) {
   try {
-    const { page = 1, limit = 12, search = "", cuisine = "", hasVideo = "" } = req.query;
+    const { page = 1, limit = 12, search = "", cuisine = "", diet = "", hasVideo = "" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Fetch user's pantry to perform global matching
@@ -39,6 +39,9 @@ async function listRecipes(req, res, next) {
     }
     if (cuisine) {
       matchQuery.cuisine = cuisine;
+    }
+    if (diet) {
+      matchQuery.diet = diet;
     }
     
     // Video Filter

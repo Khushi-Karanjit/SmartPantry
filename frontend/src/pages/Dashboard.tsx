@@ -106,15 +106,22 @@ export default function Dashboard() {
           )}
 
           {/* STATS ENGINE */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <StatCard title="Food Items" value={`${stats?.totalItems ?? 0} ITEMS`} sub={`${stats?.capacityUsedPercent ?? 0}% capacity used`} icon={<CheckCircle2 size={20} />} />
-             <StatCard title="Priority Alerts" value={`${stats?.expiringSoonCount ?? 0} URGENT`} sub="Expiring very soon" icon={<AlertTriangle size={20} />} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+             <StatCard title="Food Items" value={`${stats?.totalItems ?? 0} ITEMS`} sub={`${stats?.capacityUsedPercent ?? 0}% capacity used`} icon={<CheckCircle2 size={20} />} variant="primary" />
+             <StatCard title="Priority Alerts" value={`${stats?.expiringSoonCount ?? 0} URGENT`} sub="Expiring very soon" icon={<AlertTriangle size={20} />} variant="warning" />
              <StatCard 
                title="EXPIRED ITEMS" 
                value={`${stats?.expiredCount ?? 0} ITEMS`} 
                sub="Waiting for cleanup" 
                icon={<Trash2 size={20} />} 
                variant="danger"
+             />
+             <StatCard 
+               title="Waste Score" 
+               value={`${stats?.wasteScore ?? 0}%`} 
+               sub={stats?.wasteScore && stats.wasteScore > 15 ? "Action required" : "Sustainable level"} 
+               icon={<Activity size={20} />} 
+               variant={stats?.wasteScore && stats.wasteScore > 15 ? "danger" : "success"}
              />
           </div>
 

@@ -33,15 +33,6 @@ function recipeMatchesPreferences(recipe, prefs) {
   if (prefs.diet && recipe.diet && !recipe.diet.toLowerCase().includes(prefs.diet.toLowerCase())) return false;
   if (prefs.cuisines?.length && recipe.cuisine && !prefs.cuisines.includes(recipe.cuisine)) return false;
   if (prefs.maxPrepMinutes && recipe.prepMinutes > prefs.maxPrepMinutes) return false;
-
-  const excluded = new Set(
-    [...(prefs.allergies || []), ...(prefs.excludeIngredients || [])].map(normalizeName)
-  );
-  if (excluded.size) {
-    for (const ing of recipe.ingredients || []) {
-      if (excluded.has(normalizeName(ing.name))) return false;
-    }
-  }
   return true;
 }
 

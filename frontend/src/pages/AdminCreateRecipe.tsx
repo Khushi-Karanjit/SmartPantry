@@ -26,7 +26,8 @@ import {
     Loader2,
     Beef,
     Wheat,
-    Droplets
+    Droplets,
+    Minus
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
@@ -148,8 +149,8 @@ export default function AdminCreateRecipe() {
                 });
 
                 setRecipe({
-                    name: r.name,
-                    description: r.description,
+                    name: r.name || "",
+                    description: r.description || "",
                     cuisine: r.cuisine || "",
                     diet: r.diet || "",
                     prepMinutes: r.prepMinutes || 30,
@@ -263,9 +264,10 @@ export default function AdminCreateRecipe() {
                 ingredientId: ing.ingredientId || ""
             }));
 
-            // Update entire recipe state with backend precision
             setRecipe(prev => ({
                 ...prev,
+                name: sug.name || prev.name,
+                description: sug.description || prev.description,
                 cuisine: sug.cuisine || prev.cuisine,
                 diet: sug.diet || prev.diet,
                 prepMinutes: sug.prepMinutes || prev.prepMinutes,
@@ -523,12 +525,30 @@ export default function AdminCreateRecipe() {
                                                 <span className="text-xs font-bold uppercase tracking-widest">{spec.l}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                {spec.k === "servings" && (
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setRecipe({ ...recipe, servings: Math.max(1, recipe.servings - 1) })}
+                                                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm shrink-0"
+                                                    >
+                                                        <Minus size={14} />
+                                                    </button>
+                                                )}
                                                 <input
                                                     type="number"
-                                                    className="w-full bg-transparent text-2xl font-bold text-slate-900 focus:outline-none"
+                                                    className={`w-full bg-transparent text-2xl font-bold text-slate-900 focus:outline-none ${spec.k === 'servings' ? 'text-center' : ''}`}
                                                     value={spec.v}
                                                     onChange={e => setRecipe({ ...recipe, [spec.k]: Number(e.target.value) })}
                                                 />
+                                                {spec.k === "servings" && (
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setRecipe({ ...recipe, servings: recipe.servings + 1 })}
+                                                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm shrink-0"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                )}
                                                 <span className="text-xs font-bold text-slate-400">{spec.s}</span>
                                             </div>
                                         </div>

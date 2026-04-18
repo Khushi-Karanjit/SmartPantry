@@ -33,6 +33,7 @@ export default function Recipes() {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   
   const [selectedCuisine, setSelectedCuisine] = useState("");
+  const [selectedDiet, setSelectedDiet] = useState("");
   const [hasVideo, setHasVideo] = useState("all");
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -63,6 +64,7 @@ export default function Recipes() {
           limit: 12,
           search,
           cuisine: selectedCuisine,
+          diet: selectedDiet,
           hasVideo
         });
         if (!active) return;
@@ -80,7 +82,7 @@ export default function Recipes() {
   useEffect(() => {
     setPage(1);
     setPreviewId(null);
-  }, [search, selectedCuisine, hasVideo]);
+  }, [search, selectedCuisine, selectedDiet, hasVideo]);
 
   const matches = useMemo<RecipeMatch[]>(() => {
     return recipes.map((recipe) => ({
@@ -173,6 +175,19 @@ export default function Recipes() {
                   <option value="all" className="bg-white">All Media</option>
                   <option value="with" className="bg-white">With Videos</option>
                   <option value="without" className="bg-white">Photos Only</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-slate-900 transition-colors" />
+             </div>
+              <div className="relative flex-1 lg:w-48 group">
+                <select
+                  value={selectedDiet}
+                  onChange={(e) => setSelectedDiet(e.target.value)}
+                  className="w-full bg-[#FAFDFF] border border-slate-200 rounded-xl py-4 pl-6 pr-10 text-sm text-slate-900 appearance-none focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all cursor-pointer font-bold"
+                >
+                  <option value="" className="bg-white">All Diets</option>
+                  <option value="Vegetarian" className="bg-white">Vegetarian</option>
+                  <option value="Vegan" className="bg-white">Vegan</option>
+                  <option value="Keto" className="bg-white">Keto</option>
                 </select>
                 <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-slate-900 transition-colors" />
              </div>
@@ -350,25 +365,49 @@ export default function Recipes() {
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{previewRecipe.name}</h2>
-                        <div className="flex gap-3">
-                          <span className="px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-widest">{previewRecipe.mealType}</span>
-                          <span className="px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-widest">Verified</span>
-                        </div>
-                      </div>
+                       <div className="space-y-4">
+                         <div className="flex items-start justify-between gap-4">
+                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight">{previewRecipe.name}</h2>
+                            <div className="flex items-center gap-4 bg-white border-2 border-slate-100 rounded-[2rem] p-2 pr-6 shrink-0 shadow-xl group/serv">
+                               <div className="w-12 h-12 rounded-[1.5rem] bg-blue-50 flex items-center justify-center text-blue-600 transition-transform group-hover/serv:rotate-12">
+                                  <Layers size={20} />
+                               </div>
+                               <div className="flex flex-col">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Servings</span>
+                                  <div className="flex items-center gap-4">
+                                     <button 
+                                       className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-blue-600 transition-all border border-transparent hover:border-slate-200" 
+                                       onClick={() => adjustServings(-1)}
+                                     >
+                                       <Minus size={16} />
+                                     </button>
+                                     <span className="text-lg font-black text-slate-900 min-w-[20px] text-center">{servings}</span>
+                                     <button 
+                                       className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-blue-600 transition-all border border-transparent hover:border-slate-200"
+                                       onClick={() => adjustServings(1)}
+                                     >
+                                       <Plus size={16} />
+                                     </button>
+                                  </div>
+                               </div>
+                            </div>
+                         </div>
+                         <div className="flex gap-3">
+                           <span className="px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-widest">{previewRecipe.mealType}</span>
+                           <span className="px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-widest">Verified</span>
+                         </div>
+                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                          {[
                            { label: "Prep", value: `${previewRecipe.prepMinutes} MIN`, icon: <Clock size={14}/> },
                            { label: "Calories", value: `${Math.round(previewRecipe.calories * (servings / (previewRecipe.servings || 1)) || 0)} kcal`, icon: <Flame size={14} className="text-orange-500" /> },
                            { label: "Protein", value: `${Math.round(previewRecipe.protein * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">P</div> },
                            { label: "Carbs", value: `${Math.round(previewRecipe.carbs * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">C</div> },
-                           { label: "Fat", value: `${Math.round(previewRecipe.fat * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">F</div> },
-                           { label: "Servings", value: `${servings}`, icon: <Layers size={14}/> }
+                           { label: "Fat", value: `${Math.round(previewRecipe.fat * (servings / (previewRecipe.servings || 1)) || 0)}g`, icon: <div className="font-bold text-[10px]">F</div> }
                          ].map((s, i) => (
-                           <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-2 text-center p-3">
-                              <div className="text-slate-500 mb-0.5">{s.icon}</div>
+                           <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-2 text-center p-3 hover:bg-white hover:shadow-sm transition-all group/stat">
+                              <div className="text-slate-500 mb-0.5 group-hover/stat:scale-110 transition-transform">{s.icon}</div>
                               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</span>
                               <span className="text-xs font-bold text-slate-800">{s.value}</span>
                            </div>
@@ -376,14 +415,9 @@ export default function Recipes() {
                       </div>
 
                       <div className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-6 space-y-6 shadow-md">
-                         <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ingredients needed</h4>
-                            <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1 border border-slate-200">
-                               <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-slate-50 transition-colors shadow-md" onClick={() => adjustServings(-1)}><Minus size={14} /></button>
-                               <span className="text-xs font-bold w-4 text-center text-slate-800">{servings}</span>
-                               <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-slate-50 transition-colors shadow-md" onClick={() => adjustServings(1)}><Plus size={14} /></button>
-                            </div>
-                         </div>
+                          <div className="flex items-center justify-between border-b border-slate-50 pb-4">
+                             <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ingredients needed</h4>
+                          </div>
                          <ul className="space-y-4">
                            {(previewRecipe.ingredients || []).map((ing, idx) => (
                              <li key={idx} className="flex items-center justify-between group">

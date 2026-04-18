@@ -123,7 +123,7 @@ export default function ShoppingListPage() {
                 }
             />
         )}>
-            <div className="max-w-2xl mx-auto pb-12 pt-8">
+            <div className="max-w-4xl mx-auto pb-12 pt-8">
                 {error && (
                     <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between">
                         <div>{error}</div>
@@ -180,7 +180,7 @@ export default function ShoppingListPage() {
                          </div>
                       </div>
                    ) : (
-                      <div className="max-h-[500px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                      <div className="max-h-[800px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                         {shoppingList.items.map((item, idx) => {
                           const done = restockedItems.has(item.name);
                           return (
