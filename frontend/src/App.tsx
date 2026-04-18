@@ -14,6 +14,8 @@ import AdminCreateRecipe from "./pages/AdminCreateRecipe";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminLogs from "./pages/AdminLogs";
+import AdminManageRecipes from "./pages/AdminManageRecipes";
+import SavedRecipes from "./pages/SavedRecipes";
 import Profile from "./pages/Profile";
 import RecipeSuggester from "./pages/RecipeSuggester";
 import Analytics from "./pages/Analytics";
@@ -29,12 +31,14 @@ export default function App() {
         <Route path="/pantry-setup" element={<ProtectedRoute><PantrySetup /></ProtectedRoute>} />
         <Route path="/home" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
+        <Route path="/admin/recipes" element={<ProtectedRoute requiredRole="admin"><AdminManageRecipes /></ProtectedRoute>} />
         <Route path="/admin/recipes/new" element={<ProtectedRoute requiredRole="admin"><AdminCreateRecipe /></ProtectedRoute>} />
         <Route path="/admin/recipes/edit/:id" element={<ProtectedRoute requiredRole="admin"><AdminCreateRecipe /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><AdminUsers /></ProtectedRoute>} />
         <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><AdminAnalytics /></ProtectedRoute>} />
         <Route path="/admin/logs" element={<ProtectedRoute requiredRole="admin"><AdminLogs /></ProtectedRoute>} />
         <Route path="/pantry" element={<ProtectedRoute><Pantry /></ProtectedRoute>} />
+        <Route path="/recipes/favourites" element={<ProtectedRoute><SavedRecipes /></ProtectedRoute>} />
         <Route path="/recipes" element={<ProtectedRoute><Recipes /></ProtectedRoute>} />
         <Route path="/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
         <Route path="/recipe-suggester" element={<ProtectedRoute><RecipeSuggester /></ProtectedRoute>} />

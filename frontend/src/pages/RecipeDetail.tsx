@@ -16,11 +16,12 @@ import {
   Plus,
   Minus,
   Zap,
-  Loader2
+  Loader2,
+  Heart
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
-import { getRecipeApi, createCookingLogApi } from "../api/api";
+import { getRecipeApi, createCookingLogApi, toggleSaveRecipeApi } from "../api/api";
 import type { Recipe } from "../api/api";
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -55,6 +56,16 @@ export default function RecipeDetail() {
             setServings(res.recipe.servings || 2);
         } catch { setError(true); } 
         finally { setLoading(false); }
+    };
+
+    const handleToggleSave = async () => {
+        if (!recipe) return;
+        try {
+            const res = await toggleSaveRecipeApi(recipe._id);
+            setRecipe({ ...recipe, isSaved: res.saved });
+        } catch (err) {
+            console.error("Toggle save error", err);
+        }
     };
 
     const handleLogCooked = async () => {
@@ -147,6 +158,12 @@ export default function RecipeDetail() {
                             </div>
                         )}
                         <button 
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${recipe.isSaved ? "bg-pink-500 text-white shadow-lg shadow-pink-200" : "bg-white border border-slate-200 text-slate-400 hover:text-pink-500"}`}
+                            onClick={handleToggleSave}
+                        >
+                            <Heart size={18} fill={recipe.isSaved ? "currentColor" : "none"} />
+                        </button>
+                        <button 
                             className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all shadow-md ${cooked ? "bg-emerald-500 text-white" : "bg-slate-900 text-white hover:bg-slate-800"}`} 
                             onClick={handleLogCooked}
                             disabled={cooking}
@@ -191,16 +208,31 @@ export default function RecipeDetail() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* LEFT PANEL: DETAILS */}
                     <div className="lg:col-span-4 space-y-8">
-                        <motion.div variants={item} className="grid grid-cols-3 gap-4">
+                        <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-5">
                                 <Clock size={16} className="text-blue-500" />
                                 <span className="text-lg font-bold text-slate-800">{recipe.prepMinutes}m</span>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Prep Time</label>
                             </div>
                             <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-5">
-                                <Flame size={16} className="text-blue-500" />
-                                <span className="text-lg font-bold text-slate-800">{recipe.calories ? Math.round(recipe.calories / Math.max(1, recipe.servings || 1)) : "---"}</span>
+                                <Flame size={16} className="text-orange-500" />
+                                <span className="text-lg font-bold text-slate-800">{recipe.calories ? Math.round(recipe.calories * (servings / (recipe.servings || 1))) : "---"}</span>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Calories</label>
+                            </div>
+                            <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-5">
+                                <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">PRO</div>
+                                <span className="text-lg font-bold text-slate-800">{recipe.protein ? Math.round(recipe.protein * (servings / (recipe.servings || 1))) : "0"}g</span>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Protein</label>
+                            </div>
+                            <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-5">
+                                <div className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">CAR</div>
+                                <span className="text-lg font-bold text-slate-800">{recipe.carbs ? Math.round(recipe.carbs * (servings / (recipe.servings || 1))) : "0"}g</span>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Carbs</label>
+                            </div>
+                            <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-5">
+                                <div className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md">FAT</div>
+                                <span className="text-lg font-bold text-slate-800">{recipe.fat ? Math.round(recipe.fat * (servings / (recipe.servings || 1))) : "0"}g</span>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Fat</label>
                             </div>
                             <div className="bg-[#FAFDFF] border border-slate-200 shadow-md rounded-3xl flex flex-col items-center text-center gap-2 p-4">
                                 <Users size={16} className="text-blue-500" />

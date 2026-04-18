@@ -10,6 +10,7 @@ router.get("/users", requireAuth, requireRole("admin"), adminController.getAdmin
 router.patch("/users/:id/status", requireAuth, requireRole("admin"), adminController.toggleUserStatus);
 router.delete("/users/:id", requireAuth, requireRole("admin"), adminController.deleteUser);
 
+router.get("/recipes", requireAuth, requireRole("admin"), adminController.getAdminRecipes);
 router.get("/logs", requireAuth, requireRole("admin"), adminController.getAdminLogs);
 router.get("/analytics", requireAuth, requireRole("admin"), adminController.getAdminAnalytics);
 

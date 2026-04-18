@@ -31,7 +31,7 @@ export default function RecipeSuggester() {
 
   const fetchPantry = async () => {
     try {
-      const res = await getPantryItemsApi();
+      const res = await getPantryItemsApi({ limit: 500 });
       const items = res.items || [];
       setPantryItems(items);
     } catch (err) {

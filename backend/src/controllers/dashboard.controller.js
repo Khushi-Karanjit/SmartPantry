@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const PantryItem = require("../models/PantryItem");
+const Notification = require("../models/Notification");
 
 function toObjectId(id) {
   if (!id) return null;
@@ -18,7 +19,10 @@ exports.getDashboardSummary = async (req, res) => {
     }
 
     const now = new Date();
-    const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayUTC = new Date(todayStr + "T00:00:00Z");
+    const tomorrowUTC = new Date(todayUTC.getTime() + 24 * 60 * 60 * 1000);
+    const in72hUTC = new Date(todayUTC.getTime() + 72 * 60 * 60 * 1000);
 
     // Total items (mongoose can accept ObjectId)
     const totalItemsPromise = PantryItem.countDocuments({ userId: userObjectId });
@@ -30,9 +34,18 @@ exports.getDashboardSummary = async (req, res) => {
       .limit(3)
       .lean();
 
-    // Expiry computation using addedAt + category.shelfLifeDays
+    // Expiry computation using ingredient.shelfLifeDays || category.shelfLifeDays || 30
     const expiryAgg = await PantryItem.aggregate([
       { $match: { userId: userObjectId } },
+      {
+        $lookup: {
+          from: "ingredients",
+          localField: "ingredientId",
+          foreignField: "_id",
+          as: "ingredient",
+        },
+      },
+      { $unwind: { path: "$ingredient", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: "categories",
@@ -44,14 +57,19 @@ exports.getDashboardSummary = async (req, res) => {
       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
       {
         $addFields: {
-          shelfLifeDays: { $ifNull: ["$category.shelfLifeDays", 0] },
+          shelfLifeDays: {
+            $ifNull: [
+              "$ingredient.shelfLifeDays",
+              { $ifNull: ["$category.shelfLifeDays", 30] },
+            ],
+          },
         },
       },
       {
         $addFields: {
           expiryAt: {
             $dateAdd: {
-              startDate: "$addedAt",
+              startDate: { $ifNull: ["$addedAt", "$createdAt"] },
               unit: "day",
               amount: "$shelfLifeDays",
             },
@@ -60,9 +78,12 @@ exports.getDashboardSummary = async (req, res) => {
       },
       {
         $addFields: {
-          isExpired: { $lt: ["$expiryAt", now] },
+          isExpired: { $lt: ["$expiryAt", tomorrowUTC] }, 
           isExpiringSoon: {
-            $and: [{ $gte: ["$expiryAt", now] }, { $lte: ["$expiryAt", in48h] }],
+            $and: [
+              { $gte: ["$expiryAt", tomorrowUTC] }, 
+              { $lte: ["$expiryAt", in72hUTC] }
+            ],
           },
         },
       },
@@ -89,8 +110,17 @@ exports.getDashboardSummary = async (req, res) => {
       .slice(0, 3);
 
     const lowStockItems = await lowStockPromise;
+    const persistentNotifications = await Notification.find({ userId: userObjectId, isRead: false })
+      .sort({ createdAt: -1 })
+      .limit(3);
 
     const reminders = [
+      ...persistentNotifications.map((n) => ({
+        type: n.type === "expiry" ? "expired" : "info",
+        text: n.title,
+        meta: n.createdAt.toISOString(),
+        description: n.message,
+      })),
       ...expiredItems.map((it) => ({
         type: "expired",
         text: `${it.name} expired`,
@@ -106,7 +136,7 @@ exports.getDashboardSummary = async (req, res) => {
         text: `${it.name} is running low (${it.quantity}${it.unit ? ` ${it.unit}` : ""})`,
         meta: null,
       })),
-    ].slice(0, 6);
+    ].slice(0, 10);
 
     // Composition by category name
     const compositionAgg = await PantryItem.aggregate([
@@ -141,12 +171,14 @@ exports.getDashboardSummary = async (req, res) => {
     const capacityMax = 100;
     const capacityUsedPercent = Math.min(100, Math.round((totalItems / capacityMax) * 100));
 
+    const expiredCount = expiryAgg.filter(x => x.isExpired).length;
+
     return res.json({
       stats: {
         totalItems,
         expiringSoonCount,
+        expiredCount,
         capacityUsedPercent,
-        mealsPlannedToday: 0,
       },
       reminders,
       composition,

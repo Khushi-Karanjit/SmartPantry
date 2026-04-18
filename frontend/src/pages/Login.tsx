@@ -125,11 +125,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest">
-              <label className="flex items-center gap-2 text-slate-400 cursor-pointer hover:text-slate-600">
-                <input type="checkbox" className="w-4 h-4 rounded border-slate-200 bg-slate-50 accent-blue-600" />
-                Remember me
-              </label>
+            <div className="flex items-center justify-end text-xs font-bold uppercase tracking-widest">
               <a href="#" className="text-blue-600 hover:text-blue-700 transition-colors" onClick={(e) => e.preventDefault()}>
                 Forgot password?
               </a>

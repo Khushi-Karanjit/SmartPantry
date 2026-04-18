@@ -48,17 +48,23 @@ import {
 } from "../api/api";
 
 function daysUntil(dateIso: string) {
-  const now = new Date();
-  const d = new Date(dateIso);
-  const ms = d.getTime() - now.getTime();
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+  if (!dateIso) return 999;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const expiryStr = dateIso.slice(0, 10);
+  
+  if (expiryStr < todayStr) return -1;
+  if (expiryStr === todayStr) return 0;
+  
+  const t = new Date(todayStr);
+  const e = new Date(expiryStr);
+  return Math.round((e.getTime() - t.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function statusOf(item: PantryItem) {
   if (!item.expiryDate) return { label: "FRESH", kind: "fresh", cls: "bg-emerald-50 text-emerald-600 border-emerald-100" };
   const d = daysUntil(item.expiryDate);
-  if (d < 0) return { label: "EXPIRED", kind: "expired", cls: "bg-red-50 text-red-600 border-red-100" };
-  if (d <= 2) return { label: "URGENT", kind: "urgent", cls: "bg-amber-50 text-amber-600 border-amber-100" };
+  if (d <= 0) return { label: "EXPIRED", kind: "expired", cls: "bg-red-50 text-red-600 border-red-100" };
+  if (d <= 3) return { label: "URGENT", kind: "urgent", cls: "bg-amber-50 text-amber-600 border-amber-100" };
   return { label: "FRESH", kind: "fresh", cls: "bg-blue-50 text-blue-600 border-blue-100" };
 }
 function getIconByKey(key: string) {
@@ -288,13 +294,7 @@ export default function Pantry() {
     try {
       setSaving(true);
       const res = await restockPantryItemApi(restockModal.id, restockQty);
-      if (res.restockStatus === 'cleared') {
-        setInfoMessage(`Safety Check: Expired stock of ${restockModal.name} was discarded. Fresh ${restockQty} ${restockModal.unit} added.`);
-      } else if (res.restockStatus === 'urgent_merge') {
-        setInfoMessage(`Restocked ${restockModal.name}. Please use your older stock first!`);
-      } else {
-        setInfoMessage(`${restockModal.name} restocked — quantity updated to ${(restockModal.currentQty) + restockQty} ${restockModal.unit}.`);
-      }
+      setInfoMessage(res.message);
       setRestockModal(null);
       await fetchItems(page);
       setTimeout(() => setInfoMessage(""), 6000);
@@ -422,12 +422,12 @@ export default function Pantry() {
                     </div>
                     <div>
                       <div className="text-sm font-bold text-amber-700 uppercase tracking-widest">Expiration Warning</div>
-                      <p className="text-xs text-slate-600 font-medium">{pagination.expiringSoonCount} items are expiring within 48 hours.</p>
+                      <p className="text-xs text-slate-600 font-medium">{pagination.expiringSoonCount} items are expiring within 72 hours.</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
-                      onClick={() => { setStatus("expiring"); setPage(1); }}
+                      onClick={() => { setStatus("expiring"); setTab("all"); setCategory("All"); setPage(1); }}
                       className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-amber-700 transition-colors shadow-md"
                     >
                       View Urgent Items

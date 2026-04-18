@@ -230,8 +230,8 @@ export type DashboardSummary = {
   stats: {
     totalItems: number;
     expiringSoonCount: number;
+    expiredCount: number;
     capacityUsedPercent: number;
-    mealsPlannedToday: number;
   };
   reminders: {
     type: "expired" | "expiring" | "low";
@@ -363,12 +363,13 @@ export function toggleSaveRecipeApi(recipeId: string) {
    Recipe APIs
 ========================= */
 
-export function listRecipesApi(params?: { page?: number; limit?: number; search?: string; cuisine?: string }) {
+export function listRecipesApi(params?: { page?: number; limit?: number; search?: string; cuisine?: string; hasVideo?: string }) {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
   if (params?.search) query.set("search", params.search);
   if (params?.cuisine) query.set("cuisine", params.cuisine);
+  if (params?.hasVideo && params.hasVideo !== "all") query.set("hasVideo", params.hasVideo);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<{ recipes: Recipe[]; pagination: PaginationMeta }>(`/recipes${suffix}`, { method: "GET" });
 }
@@ -540,6 +541,16 @@ export function getAdminStatsApi() {
 
 export function getAdminActivitiesApi() {
   return request<{ recentRecipes: AdminActivity[]; popularRecipes: AdminActivity[] }>("/admin/activities", { method: "GET" });
+}
+
+export function getAdminRecipesApi(params?: { page?: number; limit?: number; search?: string; status?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.search) query.set("search", params.search);
+  if (params?.status) query.set("status", params.status);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<{ recipes: Recipe[]; pagination: PaginationMeta }>(`/admin/recipes${suffix}`, { method: "GET" });
 }
 
 export function updateRecipeStatusApi(id: string, status: string) {

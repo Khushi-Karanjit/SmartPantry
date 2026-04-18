@@ -17,14 +17,17 @@ import {
   ChevronRight,
   Sparkles,
   PlusSquare,
-  Activity
+  Activity,
+  Info,
+  Trash2
 } from "lucide-react";
 
 // Removed local formatRelative in favor of centralized timeUtils.ts
 
-function alertUi(type: "expired" | "expiring" | "low") {
+function alertUi(type: "expired" | "expiring" | "low" | "info") {
   if (type === "expired") return { cls: "bg-red-500/10 text-red-500 border-red-500/20", icon: <CircleAlert size={16} /> };
   if (type === "expiring") return { cls: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: <Clock size={16} /> };
+  if (type === "info") return { cls: "bg-[#F3F4F6] text-slate-500 border-slate-200", icon: <Info size={16} /> };
   return { cls: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: <TrendingDown size={16} /> };
 }
 
@@ -106,7 +109,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              <StatCard title="Food Items" value={`${stats?.totalItems ?? 0} ITEMS`} sub={`${stats?.capacityUsedPercent ?? 0}% capacity used`} icon={<CheckCircle2 size={20} />} />
              <StatCard title="Priority Alerts" value={`${stats?.expiringSoonCount ?? 0} URGENT`} sub="Expiring very soon" icon={<AlertTriangle size={20} />} />
-             <StatCard title="Planned Meals" value={`${stats?.mealsPlannedToday ?? 0} TODAY`} sub="Ready for your day" icon={<Activity size={20} />} />
+             <StatCard 
+               title="EXPIRED ITEMS" 
+               value={`${stats?.expiredCount ?? 0} ITEMS`} 
+               sub="Waiting for cleanup" 
+               icon={<Trash2 size={20} />} 
+               variant="danger"
+             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -122,22 +131,29 @@ export default function Dashboard() {
                   </button>
                </div>
                
-               <div className="space-y-3">
-                 {data.reminders?.length ? (
-                    data.reminders.slice(0, 3).map((r, idx) => {
-                      const ui = alertUi(r.type);
+                <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1 customize-scrollbar pb-2">
+                  {data.reminders?.length ? (
+                    data.reminders.slice(0, 10).map((r, idx) => {
+                      const ui = alertUi(r.type as any);
                       const timeData = r.meta ? formatFullTimestamp(r.meta) : { relative: "", exact: "" };
                       const suffix = timeData.relative ? ` (${timeData.relative})` : "";
                        return (
-                         <motion.div whileHover={{ scale: 1.01 }} key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${ui.cls.replace('/10', '/30')}`} title={timeData.exact}>
+                         <motion.div 
+                           whileHover={{ scale: 1.01 }} 
+                           key={idx} 
+                           className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${ui.cls.replace('/10', '/30')} hover:shadow-md hover:border-blue-400/30`} 
+                           title={timeData.exact}
+                           onClick={() => nav('/notifications')}
+                         >
                            <div className="flex items-center gap-4">
                              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FAFDFF] border border-slate-200/50">{ui.icon}</div>
                              <div className="flex flex-col">
-                                <span className="text-sm font-bold text-slate-700">{r.text}{suffix}</span>
-                                {timeData.exact && <span className="text-[10px] text-slate-400 font-medium">{timeData.exact}</span>}
+                                <span className="text-sm font-bold text-slate-700 leading-tight">{r.text}{r.type !== 'info' && suffix}</span>
+                                {r.type === 'info' && <span className="text-[10px] text-indigo-600/70 font-bold uppercase tracking-wider">{timeData.relative || 'new'}</span>}
+                                {timeData.exact && r.type !== 'info' && <span className="text-[10px] text-slate-400 font-medium">{timeData.exact}</span>}
                              </div>
                            </div>
-                           <ChevronRight size={16} className="text-slate-300" />
+                           <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                          </motion.div>
                        );
                     })

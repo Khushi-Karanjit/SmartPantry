@@ -3,6 +3,7 @@ const PantryPreset = require("../models/PantryPreset");
 const PantryItem = require("../models/PantryItem");
 const Category = require("../models/Category");
 const Ingredient = require("../models/Ingredient");
+const Notification = require("../models/Notification");
 
 /**
  * Compute expiry ISO date from a base date and shelf life days.
@@ -18,11 +19,17 @@ function computeExpiryIso(baseDate, shelfLifeDays) {
  * Helper to calculate days from now until a date.
  */
 function daysUntil(dateIso) {
-  if (!dateIso) return 0;
-  const now = new Date();
-  const d = new Date(dateIso);
-  const ms = d.getTime() - now.getTime();
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+  if (!dateIso) return 999;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const expiryStr = dateIso.slice(0, 10);
+  
+  if (expiryStr < todayStr) return -1;
+  if (expiryStr === todayStr) return 0;
+  
+  // Difference in days for positive values
+  const t = new Date(todayStr);
+  const e = new Date(expiryStr);
+  return Math.round((e.getTime() - t.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /**
@@ -72,7 +79,7 @@ async function initializePantry(req, res) {
       if (!normalizedName) continue;
 
       const ingredient = await Ingredient.findOneAndUpdate(
-        { name: normalizedName, category: catName },
+        { name: normalizedName },
         {
           $setOnInsert: {
             name: normalizedName,
@@ -158,10 +165,10 @@ async function getPantryItems(req, res) {
 
     const expiringSoonTotal = mappedAll.filter(it => {
       const d = daysUntil(it.expiryDate);
-      return d >= 0 && d <= 2;
+      return d > 0 && d <= 3;
     }).length;
-
-    const expiredTotal = mappedAll.filter(it => daysUntil(it.expiryDate) < 0).length;
+    
+    const expiredTotal = mappedAll.filter(it => daysUntil(it.expiryDate) <= 0).length;
     const freshTotal = mappedAll.filter(it => daysUntil(it.expiryDate) > 2).length;
 
     // 1. Build Base Query (Tab, Search, Category)
@@ -200,9 +207,9 @@ async function getPantryItems(req, res) {
     if (status) {
       finalItems = mapped.filter(it => {
         const d = daysUntil(it.expiryDate);
-        if (status === "expiring") return d >= 0 && d <= 2;
-        if (status === "expired") return d < 0;
-        if (status === "fresh") return d > 2;
+        if (status === "expiring") return d > 0 && d <= 3;
+        if (status === "expired") return d <= 0;
+        if (status === "fresh") return d > 3;
         return true;
       });
     }
@@ -364,11 +371,10 @@ async function cleanupExpiredItems(req, res) {
     const expiredIds = items.filter(it => {
       const cat = it.categoryId || {};
       const ing = it.ingredientId || {};
-      const shelfLife = ing.shelfLifeDays ?? cat.shelfLifeDays ?? 30;
+      const shelfLife = ing.shelfLifeDays || cat.shelfLifeDays || 30;
       const base = it.addedAt || it.createdAt || new Date();
-      const expiry = new Date(base);
-      expiry.setDate(expiry.getDate() + Number(shelfLife));
-      return expiry < now;
+      const d = daysUntil(computeExpiryIso(base, shelfLife));
+      return d <= 0;
     }).map(it => it._id);
 
     if (expiredIds.length === 0) return res.json({ message: "No expired items found", count: 0 });
@@ -404,11 +410,11 @@ async function restockPantryItem(req, res) {
     let restockStatus = 'standard';
     let updateOp;
 
-    if (d < 0) {
+    if (d <= 0) {
       // EXPIRED — discard old quantity, start fresh
       restockStatus = 'cleared';
       updateOp = { $set: { quantity: q, addedAt: new Date() } };
-    } else if (d <= 2) {
+    } else if (d <= 3) {
       // URGENT — merge quantities, warn user
       restockStatus = 'urgent_merge';
       updateOp = { $inc: { quantity: q }, $set: { addedAt: new Date() } };
@@ -423,7 +429,24 @@ async function restockPantryItem(req, res) {
       { new: true }
     );
 
-    return res.json({ message: "Item restocked successfully", item, restockStatus });
+    let message = `${existingItem.name} restocked — quantity updated to ${item.quantity} ${item.unit || "pcs"}.`;
+    if (restockStatus === 'cleared') {
+      message = `Safety Check: Expired stock of ${existingItem.name} was discarded. Fresh ${q} ${existingItem.unit || "pcs"} added.`;
+    } else if (restockStatus === 'urgent_merge') {
+      message = `Restocked ${existingItem.name}. Please use your older stock first!`;
+      
+      // Create persistent notification
+      await Notification.create({
+        userId,
+        title: `Urgent Restock: ${existingItem.name}`,
+        message: `You just restocked ${existingItem.name} which was expiring soon. Please remember to use the older items first!`,
+        type: "info",
+        priority: "medium",
+        metadata: { itemId: id, name: existingItem.name }
+      });
+    }
+
+    return res.json({ message, item, restockStatus });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to restock item" });

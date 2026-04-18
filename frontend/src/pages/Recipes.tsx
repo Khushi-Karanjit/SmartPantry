@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import PageSkeleton from "../components/PageSkeleton";
-import { getPantryItemsApi, listRecipesApi, listCuisinesApi, type PantryItem, type Recipe, type PaginationMeta } from "../api/api";
+import { getPantryItemsApi, listRecipesApi, listCuisinesApi, toggleSaveRecipeApi, type PantryItem, type Recipe, type PaginationMeta } from "../api/api";
 import { 
   Search, 
   ChevronDown, 
@@ -20,7 +20,8 @@ import {
   Sunrise,
   Sun,
   Moon,
-  Apple
+  Apple,
+  Heart
 } from "lucide-react";
 
 type RecipeMatch = Recipe & { match: number };
@@ -28,7 +29,12 @@ type RecipeMatch = Recipe & { match: number };
 function buildPantrySet(items: PantryItem[]) {
   const set = new Set<string>();
   items.forEach((item) => {
-    if (item.ingredientId) set.add(item.ingredientId);
+    if (item.ingredientId) {
+      const id = typeof item.ingredientId === 'object' 
+        ? (item.ingredientId as any)._id 
+        : item.ingredientId;
+      set.add(String(id));
+    }
   });
   return set;
 }
@@ -36,7 +42,7 @@ function buildPantrySet(items: PantryItem[]) {
 function computeMatch(recipe: Recipe, pantrySet: Set<string>) {
   const ingredients = recipe.ingredients || [];
   if (!ingredients.length) return 0;
-  const matched = ingredients.filter((ing) => pantrySet.has(ing.ingredientId)).length;
+  const matched = ingredients.filter((ing) => pantrySet.has(String(ing.ingredientId))).length;
   return Math.round((matched / ingredients.length) * 100);
 }
 
@@ -47,6 +53,7 @@ export default function Recipes() {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   
   const [selectedCuisine, setSelectedCuisine] = useState("");
+  const [hasVideo, setHasVideo] = useState("all");
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -79,7 +86,8 @@ export default function Recipes() {
           page,
           limit: 12,
           search,
-          cuisine: selectedCuisine
+          cuisine: selectedCuisine,
+          hasVideo
         });
         if (!active) return;
         setRecipes(res.recipes || []);
@@ -91,21 +99,19 @@ export default function Recipes() {
       }
     })();
     return () => { active = false; };
-  }, [page, search, selectedCuisine]);
+  }, [page, search, selectedCuisine, hasVideo]);
 
   useEffect(() => {
     setPage(1);
     setPreviewId(null);
-  }, [search, selectedCuisine]);
-
-  const pantrySet = useMemo(() => buildPantrySet(pantry), [pantry]);
+  }, [search, selectedCuisine, hasVideo]);
 
   const matches = useMemo<RecipeMatch[]>(() => {
     return recipes.map((recipe) => ({
       ...recipe,
-      match: computeMatch(recipe, pantrySet),
+      match: recipe.matchPercentage || 0,
     }));
-  }, [recipes, pantrySet]);
+  }, [recipes]);
 
   const previewRecipe = useMemo(
     () => matches.find((recipe) => recipe._id === previewId) || null,
@@ -123,6 +129,18 @@ export default function Recipes() {
     const limit = Math.max(base * 3, 8);
     setServings(Math.min(limit, next));
   }
+
+  const handleToggleSave = async (recipe: Recipe) => {
+    try {
+      const res = await toggleSaveRecipeApi(recipe._id);
+      // Optimistically update local state
+      setRecipes(prev => prev.map(r => 
+        r._id === recipe._id ? { ...r, isSaved: res.saved } : r
+      ));
+    } catch (err) {
+      console.error("Toggle save error", err);
+    }
+  };
 
   function scaledQuantity(qty: number) {
     if (!previewRecipe || !qty) return qty;
@@ -170,7 +188,19 @@ export default function Recipes() {
             />
           </div>
           <div className="flex items-center gap-4 w-full lg:w-auto">
-              <div className="relative flex-1 lg:w-64 group">
+              <div className="relative flex-1 lg:w-48 group">
+                <select
+                  value={hasVideo}
+                  onChange={(e) => setHasVideo(e.target.value)}
+                  className="w-full bg-[#FAFDFF] border border-slate-200 rounded-xl py-4 pl-6 pr-10 text-sm text-slate-900 appearance-none focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all cursor-pointer font-bold"
+                >
+                  <option value="all" className="bg-white">All Media</option>
+                  <option value="with" className="bg-white">With Videos</option>
+                  <option value="without" className="bg-white">Photos Only</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-slate-900 transition-colors" />
+             </div>
+              <div className="relative flex-1 lg:w-48 group">
                 <select
                   value={selectedCuisine}
                   onChange={(e) => setSelectedCuisine(e.target.value)}
@@ -211,8 +241,16 @@ export default function Recipes() {
                     <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     
-                    <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-full shadow-md backdrop-blur-sm">
-                      {recipe.match}% Matches
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                        <div className="px-3 py-1 bg-white/90 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-full shadow-md backdrop-blur-sm">
+                        {recipe.match}% Matches
+                        </div>
+                        <button 
+                            className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${recipe.isSaved ? 'bg-pink-500 text-white' : 'bg-white/90 text-slate-400 hover:text-pink-500'}`}
+                            onClick={(e) => { e.stopPropagation(); handleToggleSave(recipe); }}
+                        >
+                            <Heart size={18} fill={recipe.isSaved ? "currentColor" : "none"} />
+                        </button>
                     </div>
 
                     {recipe.mealType && (
@@ -322,7 +360,15 @@ export default function Recipes() {
                       <img src={previewRecipe.imageUrl || ""} className="w-full h-full object-cover" alt="" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
-                         <span className="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">{previewRecipe.match}% Match</span>
+                         <div className="flex items-center gap-2">
+                            <span className="px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">{previewRecipe.match}% Match</span>
+                            <button 
+                                className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${previewRecipe.isSaved ? 'bg-pink-500 text-white' : 'bg-white/90 text-slate-400 hover:text-pink-500'}`}
+                                onClick={() => handleToggleSave(previewRecipe)}
+                            >
+                                <Heart size={18} fill={previewRecipe.isSaved ? "currentColor" : "none"} />
+                            </button>
+                         </div>
                          <span className="text-xs font-bold text-white px-3 py-1 bg-black/20 rounded-lg">{previewRecipe.cuisine}</span>
                       </div>
                     </div>
@@ -335,16 +381,19 @@ export default function Recipes() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                        {[
-                         { label: "Prep Time", value: `${previewRecipe.prepMinutes} MIN`, icon: <Clock size={14}/> },
-                         { label: "Calories", value: `${previewRecipe.calories || "---"} kcal`, icon: <Flame size={14}/> },
-                         { label: "Servings", value: `${servings} UNITS`, icon: <Layers size={14}/> }
+                         { label: "Prep", value: `${previewRecipe.prepMinutes} MIN`, icon: <Clock size={14}/> },
+                         { label: "Calories", value: `${Math.round(previewRecipe.calories * (servings / (previewRecipe.servings || 2)) || 0)} kcal`, icon: <Flame size={14} className="text-orange-500" /> },
+                         { label: "Protein", value: `${Math.round(previewRecipe.protein * (servings / (previewRecipe.servings || 2)) || 0)}g`, icon: <div className="font-bold text-[10px]">P</div> },
+                         { label: "Carbs", value: `${Math.round(previewRecipe.carbs * (servings / (previewRecipe.servings || 2)) || 0)}g`, icon: <div className="font-bold text-[10px]">C</div> },
+                         { label: "Fat", value: `${Math.round(previewRecipe.fat * (servings / (previewRecipe.servings || 2)) || 0)}g`, icon: <div className="font-bold text-[10px]">F</div> },
+                         { label: "Servings", value: `${servings}`, icon: <Layers size={14}/> }
                        ].map((s, i) => (
-                         <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-2 text-center p-4">
-                            <div className="text-blue-500 mb-1">{s.icon}</div>
+                         <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-2 text-center p-3">
+                            <div className="text-slate-500 mb-0.5">{s.icon}</div>
                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</span>
-                            <span className="text-sm font-bold text-slate-800">{s.value}</span>
+                            <span className="text-xs font-bold text-slate-800">{s.value}</span>
                          </div>
                        ))}
                     </div>
@@ -375,7 +424,12 @@ export default function Recipes() {
                       <Link className="flex-1 btn-futuristic py-4 text-center text-sm shadow-blue-100 flex items-center justify-center gap-2" to={`/recipes/${previewRecipe._id}`}>
                         Start Cooking <ArrowRight size={16} />
                       </Link>
-                      <Link className="flex-1 btn-ghost-futuristic py-4 text-center text-sm" to="/meal-planner">Save for Later</Link>
+                      <button 
+                        className={`flex-1 py-4 text-center text-sm font-bold rounded-2xl border transition-all ${previewRecipe.isSaved ? 'bg-pink-50 border-pink-100 text-pink-600' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'}`} 
+                        onClick={() => handleToggleSave(previewRecipe)}
+                      >
+                        {previewRecipe.isSaved ? "Favourited" : "Add to Favourites"}
+                      </button>
                     </div>
                   </div>
                 )}

@@ -190,16 +190,22 @@ export default function Admin() {
            {/* RECENT ACTIVITY TABLE */}
            <motion.div variants={item} className="xl:col-span-8 bg-[#FAFDFF] border border-slate-200 rounded-3xl shadow-lg min-w-0 flex flex-col overflow-hidden max-w-full hover:shadow-xl transition-all hover:-translate-y-1">
               <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 bg-white z-10 w-full min-w-0">
-                 <div className="space-y-1 shrink-0">
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">Recent Recipes</h3>
-                    <p className="text-xs sm:text-sm text-slate-500 truncate">Manage and oversee the recipe catalog</p>
-                 </div>
-                 <div className="flex items-center gap-3 w-full sm:w-auto min-w-0 flex-1 sm:max-w-xs">
-                    <div className="relative w-full">
-                       <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                       <input className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white" placeholder="Search recipes..." />
-                    </div>
-                 </div>
+                  <div className="space-y-1 shrink-0">
+                     <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">Recent Recipes</h3>
+                     <p className="text-xs sm:text-sm text-slate-500 truncate">Manage and oversee the recipe catalog</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto min-w-0">
+                     <button 
+                        onClick={() => navigate("/admin/recipes")}
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition-all shrink-0"
+                     >
+                        Manage All
+                     </button>
+                     <div className="relative w-full sm:w-64">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white" placeholder="Search..." />
+                     </div>
+                  </div>
               </div>
               
               <div className="overflow-x-auto w-full max-w-full">

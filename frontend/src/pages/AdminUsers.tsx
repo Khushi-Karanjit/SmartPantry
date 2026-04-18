@@ -94,7 +94,7 @@ export default function AdminUsers() {
                     <span className="truncate">Directory: {users.length} Records</span>
                  </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 w-full sm:w-auto">
+               <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 w-full sm:w-auto">
                  <div className="relative w-full sm:max-w-xs">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
@@ -105,9 +105,6 @@ export default function AdminUsers() {
                        onChange={(e) => setQ(e.target.value)}
                     />
                  </div>
-                 <button className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#FAFDFF] border border-slate-200 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-md">
-                    <ArrowUpRight size={16} /> Export
-                 </button>
               </div>
            </motion.div>
 
@@ -135,7 +132,6 @@ export default function AdminUsers() {
                        <tr className="border-b border-slate-200 bg-slate-50">
                           <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">User</th>
                           <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Role</th>
-                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
                           <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Joined</th>
                           <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
                        </tr>
@@ -169,28 +165,10 @@ export default function AdminUsers() {
                               </span>
                            </td>
                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                 <div className={`w-2 h-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                                 <span className={`text-xs font-bold uppercase ${user.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                                    {user.isActive ? "Active" : "Disabled"}
-                                 </span>
-                              </div>
-                           </td>
-                           <td className="px-6 py-4">
                               <p className="text-sm text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</p>
                            </td>
                            <td className="px-6 py-4">
                               <div className="flex items-center justify-end gap-2">
-                                 <button 
-                                   className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                                     ${user.isActive 
-                                       ? "bg-yellow-50 text-yellow-600 hover:bg-yellow-100" 
-                                       : "bg-green-50 text-green-600 hover:bg-green-100"}`}
-                                   onClick={() => handleToggleStatus(user._id)}
-                                   title={user.isActive ? "Disable User" : "Enable User"}
-                                 >
-                                   {user.isActive ? <UserX size={16} /> : <UserCheck size={16} />}
-                                 </button>
                                  <button 
                                    className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed" 
                                    onClick={() => handleDelete(user._id)}

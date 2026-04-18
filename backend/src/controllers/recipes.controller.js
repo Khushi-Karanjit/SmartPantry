@@ -12,34 +12,114 @@ function extractVideoId(url) {
 
 async function listRecipes(req, res, next) {
   try {
-    const { page = 1, limit = 12, search = "", cuisine = "" } = req.query;
+    const { page = 1, limit = 12, search = "", cuisine = "", hasVideo = "" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const query = { status: "published" };
+    // Fetch user's pantry to perform global matching
+    const PantryItem = require("../models/PantryItem");
+    const mongoose = require("mongoose");
+    const userObjectId = new mongoose.Types.ObjectId(String(req.userId));
+
+    const pantry = await PantryItem.find({ userId: req.userId }).select("ingredientId").lean();
+    
+    // Crucial MongoDB Type Enforcement
+    const pantryIngredientIds = pantry
+      .filter(p => !!p.ingredientId)
+      .map(p => {
+        try { return new mongoose.Types.ObjectId(String(p.ingredientId)); } 
+        catch (e) { return null; }
+      })
+      .filter(Boolean);
+
+    const matchQuery = { status: "published" };
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      matchQuery.name = { $regex: search, $options: "i" };
     }
     if (cuisine) {
-      query.cuisine = cuisine;
+      matchQuery.cuisine = cuisine;
+    }
+    
+    // Video Filter
+    if (hasVideo === "with") {
+      matchQuery.videoUrl = { $exists: true, $ne: "" };
+    } else if (hasVideo === "without") {
+      matchQuery.$or = [ { videoUrl: { $exists: false } }, { videoUrl: "" }, { videoUrl: null } ];
     }
 
-    const [recipes, total] = await Promise.all([
-      Recipe.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit))
-        .lean(),
-      Recipe.countDocuments(query),
+    const pipeline = [
+      { $match: matchQuery },
+      {
+        $addFields: {
+          matchedCount: {
+            $size: {
+              $setIntersection: [
+                {
+                  $map: {
+                    input: { $ifNull: ["$ingredients", []] },
+                    as: "ing",
+                    in: "$$ing.ingredientId"
+                  }
+                },
+                pantryIngredientIds
+              ]
+            }
+          },
+          totalIngredients: { $size: { $ifNull: ["$ingredients", []] } }
+        }
+      },
+      {
+        $addFields: {
+          matchPercentage: {
+            $cond: {
+              if: { $gt: ["$totalIngredients", 0] },
+              then: { $round: [ { $multiply: [ { $divide: ["$matchedCount", "$totalIngredients"] }, 100 ] }, 0 ] },
+              else: 0
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "savedrecipes",
+          let: { recipeId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$userId", userObjectId] },
+                    { $eq: ["$recipeId", "$$recipeId"] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "savedStatus"
+        }
+      },
+      {
+        $addFields: {
+          isSaved: { $gt: [{ $size: "$savedStatus" }, 0] }
+        }
+      },
+      { $sort: { matchPercentage: -1, createdAt: -1 } },
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    ];
+
+    const [recipes, totalCount] = await Promise.all([
+      Recipe.aggregate(pipeline),
+      Recipe.countDocuments(matchQuery)
     ]);
 
     res.json({
       recipes,
       pagination: {
-        total,
+        total: totalCount,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        hasMore: skip + recipes.length < total,
+        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        hasMore: skip + recipes.length < totalCount,
       },
     });
   } catch (err) {
@@ -55,7 +135,11 @@ async function getRecipe(req, res, next) {
       { new: true }
     ).lean();
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
-    res.json({ recipe });
+    
+    // Check if saved
+    const isSaved = await SavedRecipe.exists({ userId: req.userId, recipeId: recipe._id });
+    
+    res.json({ recipe: { ...recipe, isSaved: !!isSaved } });
   } catch (err) {
     next(err);
   }

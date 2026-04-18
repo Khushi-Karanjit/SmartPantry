@@ -355,9 +355,28 @@ export default function AdminCreateRecipe() {
                             </button>
                             <h1 className="text-3xl font-bold tracking-tight text-slate-900">{id ? "Edit" : "Create"} <span className="text-blue-600">Recipe</span></h1>
                         </div>
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-50 border border-slate-200 px-3 py-1 rounded-full w-fit mt-2 ml-14">
-                            <Dna size={16} className="text-blue-600" />
-                            Draft Workspace: {id ? `ID: ${id.slice(-6).toUpperCase()}` : "New Recipe"}
+
+                        
+                        <div className="flex items-center gap-4 mt-4 ml-14">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recipe Visibility</label>
+                            <div className="flex items-center gap-2">
+                                {["published", "draft", "archived"].map((s) => (
+                                    <button
+                                        key={s}
+                                        type="button"
+                                        onClick={() => setRecipe({ ...recipe, status: s })}
+                                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                            recipe.status === s
+                                                ? (s === "published" ? "bg-green-50 text-green-600 border-green-200 ring-4 ring-green-50" : 
+                                                   s === "draft" ? "bg-yellow-50 text-yellow-600 border-yellow-200 ring-4 ring-yellow-50" :
+                                                   "bg-slate-100 text-slate-600 border-slate-300 ring-4 ring-slate-50")
+                                                : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                                        }`}
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </motion.div>

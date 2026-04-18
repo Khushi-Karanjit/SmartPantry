@@ -179,3 +179,39 @@ exports.getAdminAnalytics = async (req, res) => {
     res.status(500).json({ message: err.message || "Failed to fetch analytics" });
   }
 };
+
+exports.getAdminRecipes = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = "", status = "" } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+    if (status) {
+      query.status = status;
+    }
+
+    const [recipes, totalCount] = await Promise.all([
+      Recipe.find(query)
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Recipe.countDocuments(query)
+    ]);
+
+    res.json({
+      recipes,
+      pagination: {
+        total: totalCount,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalCount / parseInt(limit))
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to fetch admin recipes" });
+  }
+};
