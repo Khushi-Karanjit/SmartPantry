@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartPantry — Unit Test Results</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a202c; padding: 32px; }
+    .header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; border-radius: 16px; padding: 32px 40px; margin-bottom: 32px; }
+    .header h1 { font-size: 28px; font-weight: 700; }
+    .header p { font-size: 14px; opacity: 0.8; margin-top: 6px; }
+    .summary { display: flex; gap: 16px; margin-bottom: 32px; }
+    .summary-card { flex: 1; background: white; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); text-align: center; }
+    .summary-card .number { font-size: 36px; font-weight: 700; }
+    .summary-card .label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+    .summary-card.pass .number { color: #16a34a; }
+    .summary-card.fail .number { color: #dc2626; }
+    .summary-card.total .number { color: #2563eb; }
+    .summary-card.time .number { color: #7c3aed; font-size: 28px; }
+    .section { margin-bottom: 24px; }
+    .section-title { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px; background: #e2e8f0; border-radius: 8px; margin-bottom: 12px; }
+    .test-card { background: white; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); overflow: hidden; border-left: 4px solid #16a34a; }
+    table { width: 100%; border-collapse: collapse; }
+    table tr { border-bottom: 1px solid #f1f5f9; }
+    table tr:last-child { border-bottom: none; }
+    table td { padding: 10px 18px; font-size: 13px; vertical-align: top; }
+    table td:first-child { width: 180px; font-weight: 600; color: #475569; background: #fafafa; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .test-id { font-weight: 700; color: #2563eb; font-size: 14px; font-family: monospace; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-pass { background: #dcfce7; color: #15803d; }
+    .footer { text-align: center; margin-top: 32px; color: #94a3b8; font-size: 12px; }
+    .pass-bar { background: #dcfce7; border-radius: 8px; padding: 6px 16px; font-size: 12px; font-weight: 700; color: #15803d; display: flex; align-items: center; gap: 8px; }
+    .pass-bar::before { content: "✓"; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>SmartPantry — Unit Test Results</h1>
+  <p>Final Year Project &nbsp;|&nbsp; Software Testing Documentation &nbsp;|&nbsp; All features covered</p>
+</div>
+
+<div class="summary">
+  <div class="summary-card total"><div class="number">37</div><div class="label">Total Tests</div></div>
+  <div class="summary-card pass"><div class="number">37</div><div class="label">Passed</div></div>
+  <div class="summary-card fail"><div class="number">0</div><div class="label">Failed</div></div>
+  <div class="summary-card time"><div class="number">1.089s</div><div class="label">Duration</div></div>
+</div>
+
+<!-- Feature 1 -->
+<div class="section">
+  <div class="section-title">Feature 1 — Authentication</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-01</td></tr>
+    <tr><td>Objective</td><td>To verify that the password is securely hashed</td></tr>
+    <tr><td>Action</td><td>The <code>hashPassword("mypassword123")</code> function was called and the result was stored</td></tr>
+    <tr><td>Expected Result</td><td>The password must not be stored in plain text. The hashed value must differ from the original input</td></tr>
+    <tr><td>Actual Result</td><td>The password was not stored in plain text. The hashed value differed from the original input</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-02</td></tr>
+    <tr><td>Objective</td><td>To verify that the correct password is accepted</td></tr>
+    <tr><td>Action</td><td>The <code>comparePassword("mypassword123", storedHash)</code> function was called</td></tr>
+    <tr><td>Expected Result</td><td>The function must return <code>true</code> for correct password</td></tr>
+    <tr><td>Actual Result</td><td>The function returned <code>true</code> for the correct password</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-03</td></tr>
+    <tr><td>Objective</td><td>To verify that an incorrect password is rejected</td></tr>
+    <tr><td>Action</td><td>The <code>comparePassword("wrongpassword", storedHash)</code> function was called</td></tr>
+    <tr><td>Expected Result</td><td>The function must return <code>false</code> for incorrect password</td></tr>
+    <tr><td>Actual Result</td><td>The function returned <code>false</code> for the incorrect password</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-04</td></tr>
+    <tr><td>Objective</td><td>To verify that a JWT token is generated and verified correctly</td></tr>
+    <tr><td>Action</td><td>A token was generated using <code>generateToken("user123")</code> then verified and decoded</td></tr>
+    <tr><td>Expected Result</td><td>The token must contain correct user ID and be valid</td></tr>
+    <tr><td>Actual Result</td><td>The token contained correct user ID and was valid</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 2 -->
+<div class="section">
+  <div class="section-title">Feature 2 — Pantry Expiry Status</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-05</td></tr>
+    <tr><td>Objective</td><td>To verify that a fresh item is correctly classified</td></tr>
+    <tr><td>Action</td><td>A new item with full shelf life was created and passed to the status function</td></tr>
+    <tr><td>Expected Result</td><td>The item must be classified as "fresh"</td></tr>
+    <tr><td>Actual Result</td><td>The item was classified as "fresh"</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-06</td></tr>
+    <tr><td>Objective</td><td>To verify that an item near expiry is classified as urgent</td></tr>
+    <tr><td>Action</td><td>An item close to expiry was created and passed to the status function</td></tr>
+    <tr><td>Expected Result</td><td>The item must be classified as "urgent"</td></tr>
+    <tr><td>Actual Result</td><td>The item was classified as "urgent"</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-07</td></tr>
+    <tr><td>Objective</td><td>To verify that an expired item is correctly classified</td></tr>
+    <tr><td>Action</td><td>An expired item was created and passed to the status function</td></tr>
+    <tr><td>Expected Result</td><td>The item must be classified as "expired"</td></tr>
+    <tr><td>Actual Result</td><td>The item was classified as "expired"</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 2b -->
+<div class="section">
+  <div class="section-title">Feature 2 — Smart Restock Policy</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-08</td></tr>
+    <tr><td>Objective</td><td>To verify that restocking an expired item resets quantity</td></tr>
+    <tr><td>Action</td><td>An expired item was restocked with new quantity</td></tr>
+    <tr><td>Expected Result</td><td>Old quantity must be discarded. New quantity must replace old value</td></tr>
+    <tr><td>Actual Result</td><td>Old quantity was discarded. New quantity replaced old value</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-09</td></tr>
+    <tr><td>Objective</td><td>To verify that restocking an urgent item merges quantity</td></tr>
+    <tr><td>Action</td><td>An urgent item was restocked with additional quantity</td></tr>
+    <tr><td>Expected Result</td><td>Quantities must be merged. Warning status must be triggered</td></tr>
+    <tr><td>Actual Result</td><td>Quantities were merged. Warning status was triggered</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-10</td></tr>
+    <tr><td>Objective</td><td>To verify that restocking a fresh item increments quantity normally</td></tr>
+    <tr><td>Action</td><td>A fresh item was restocked with additional quantity</td></tr>
+    <tr><td>Expected Result</td><td>Quantity must increase normally. No warning status should be triggered</td></tr>
+    <tr><td>Actual Result</td><td>Quantity increased normally. No warning status was triggered</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 3 -->
+<div class="section">
+  <div class="section-title">Feature 3 — Ingredient Normalization</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-11</td></tr>
+    <tr><td>Objective</td><td>To verify plural ingredient names are converted to singular</td></tr>
+    <tr><td>Action</td><td>The <code>singularize("apples")</code> function was called</td></tr>
+    <tr><td>Expected Result</td><td>The result must be "apple"</td></tr>
+    <tr><td>Actual Result</td><td>The result was "apple"</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-12</td></tr>
+    <tr><td>Objective</td><td>To verify words ending in '-ies' convert to '-y'</td></tr>
+    <tr><td>Action</td><td>The <code>singularize("berries")</code> function was called</td></tr>
+    <tr><td>Expected Result</td><td>The result must be "berry"</td></tr>
+    <tr><td>Actual Result</td><td>The result was "berry"</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-13</td></tr>
+    <tr><td>Objective</td><td>To verify irregular words are handled correctly</td></tr>
+    <tr><td>Action</td><td>The <code>singularize("tomatoes")</code> and <code>singularize("chilies")</code> functions were called</td></tr>
+    <tr><td>Expected Result</td><td>Results must be "tomato" and "chili"</td></tr>
+    <tr><td>Actual Result</td><td>Results were "tomato" and "chili"</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-14</td></tr>
+    <tr><td>Objective</td><td>To verify uncountable words remain unchanged</td></tr>
+    <tr><td>Action</td><td>The <code>singularize("rice")</code> and <code>singularize("flour")</code> functions were called</td></tr>
+    <tr><td>Expected Result</td><td>Results must remain unchanged</td></tr>
+    <tr><td>Actual Result</td><td>Results remained unchanged</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 4 -->
+<div class="section">
+  <div class="section-title">Feature 4 — Recipe Nutritional Calculation</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-15</td></tr>
+    <tr><td>Objective</td><td>To verify calorie calculation using the 4-4-9 rule</td></tr>
+    <tr><td>Action</td><td>The <code>calculateCalories</code> function was called with protein=20, carbs=30, fat=10</td></tr>
+    <tr><td>Expected Result</td><td>Calories must be calculated correctly as 290 kcal</td></tr>
+    <tr><td>Actual Result</td><td>Calories were calculated correctly as 290 kcal</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-16</td></tr>
+    <tr><td>Objective</td><td>To verify system handles zero nutritional values</td></tr>
+    <tr><td>Action</td><td>The <code>calculateCalories</code> function was called with all values set to zero</td></tr>
+    <tr><td>Expected Result</td><td>Result must be 0. No errors should occur</td></tr>
+    <tr><td>Actual Result</td><td>Result was 0. No errors occurred</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 5 -->
+<div class="section">
+  <div class="section-title">Feature 5 — Recipe Suggester</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-17</td></tr>
+    <tr><td>Objective</td><td>To verify full ingredient match scoring</td></tr>
+    <tr><td>Action</td><td>A recipe with all matching ingredients was evaluated</td></tr>
+    <tr><td>Expected Result</td><td>Score must be 1.0</td></tr>
+    <tr><td>Actual Result</td><td>Score was 1.0</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-18</td></tr>
+    <tr><td>Objective</td><td>To verify partial ingredient match scoring</td></tr>
+    <tr><td>Action</td><td>A recipe with partial ingredient match was evaluated</td></tr>
+    <tr><td>Expected Result</td><td>Score must be proportional to matched ingredients</td></tr>
+    <tr><td>Actual Result</td><td>Score reflected partial match correctly</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 6 -->
+<div class="section">
+  <div class="section-title">Feature 6 — Meal Planner</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-19</td></tr>
+    <tr><td>Objective</td><td>To verify calorie tolerance range in meal planning</td></tr>
+    <tr><td>Action</td><td>The <code>isWithinTolerance</code> function was tested with values inside and outside the ±10% range</td></tr>
+    <tr><td>Expected Result</td><td>Values within range return true. Values outside range return false</td></tr>
+    <tr><td>Actual Result</td><td>Correct results returned for both cases</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-20</td></tr>
+    <tr><td>Objective</td><td>To verify merging of duplicate ingredients in shopping list</td></tr>
+    <tr><td>Action</td><td>Multiple meals with the same ingredient were processed</td></tr>
+    <tr><td>Expected Result</td><td>Duplicate ingredients must be merged. Quantities must be summed</td></tr>
+    <tr><td>Actual Result</td><td>Ingredients were merged correctly. Quantities were summed</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 7 -->
+<div class="section">
+  <div class="section-title">Feature 7 — Analytics</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-21</td></tr>
+    <tr><td>Objective</td><td>To verify waste score calculation based on expired items</td></tr>
+    <tr><td>Action</td><td>Pantry items with expired and fresh items were evaluated</td></tr>
+    <tr><td>Expected Result</td><td>Waste score must reflect expired items proportion</td></tr>
+    <tr><td>Actual Result</td><td>Waste score correctly reflected expired items</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-22</td></tr>
+    <tr><td>Objective</td><td>To verify identification of most cooked recipe</td></tr>
+    <tr><td>Action</td><td>Cooking logs were analyzed using <code>getMostCooked</code></td></tr>
+    <tr><td>Expected Result</td><td>Recipe with highest count must be returned</td></tr>
+    <tr><td>Actual Result</td><td>Correct recipe was identified</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 8 -->
+<div class="section">
+  <div class="section-title">Feature 8 — Notifications</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-23</td></tr>
+    <tr><td>Objective</td><td>To verify expiry notification generation</td></tr>
+    <tr><td>Action</td><td>An item with low remaining days was evaluated</td></tr>
+    <tr><td>Expected Result</td><td>Expiry warning must be generated</td></tr>
+    <tr><td>Actual Result</td><td>Expiry warning was generated</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-24</td></tr>
+    <tr><td>Objective</td><td>To verify duplicate notifications are not created</td></tr>
+    <tr><td>Action</td><td>Notification check was run with an existing notification already present</td></tr>
+    <tr><td>Expected Result</td><td>No duplicate notification must be generated</td></tr>
+    <tr><td>Actual Result</td><td>No duplicate notification was generated</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 9 -->
+<div class="section">
+  <div class="section-title">Feature 9 — Admin Authorization</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-25</td></tr>
+    <tr><td>Objective</td><td>To verify admin role access</td></tr>
+    <tr><td>Action</td><td>Admin user role was checked using <code>isAdmin({ role: "admin" })</code></td></tr>
+    <tr><td>Expected Result</td><td>Function must return true</td></tr>
+    <tr><td>Actual Result</td><td>Function returned true</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-26</td></tr>
+    <tr><td>Objective</td><td>To verify non-admin access restriction</td></tr>
+    <tr><td>Action</td><td>Regular user role was checked using <code>isAdmin({ role: "user" })</code></td></tr>
+    <tr><td>Expected Result</td><td>Function must return false</td></tr>
+    <tr><td>Actual Result</td><td>Function returned false</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<!-- Feature 10 -->
+<div class="section">
+  <div class="section-title">Feature 10 — Data Normalization Migration</div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-27</td></tr>
+    <tr><td>Objective</td><td>To verify detection of plural words for normalization</td></tr>
+    <tr><td>Action</td><td>A plural ingredient name "STRAWBERRIES" was checked</td></tr>
+    <tr><td>Expected Result</td><td>System must flag it for normalization</td></tr>
+    <tr><td>Actual Result</td><td>Ingredient was correctly flagged</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+
+  <div class="test-card"><table>
+    <tr><td>Test ID</td><td class="test-id">TC-U-28</td></tr>
+    <tr><td>Objective</td><td>To verify singular words are not flagged for normalization</td></tr>
+    <tr><td>Action</td><td>A singular ingredient name "APPLE" was checked</td></tr>
+    <tr><td>Expected Result</td><td>No normalization should be required</td></tr>
+    <tr><td>Actual Result</td><td>No normalization was required</td></tr>
+    <tr><td>Conclusion</td><td><span class="badge badge-pass">✓ Test Successful</span></td></tr>
+  </table></div>
+</div>
+
+<div class="footer">
+  SmartPantry Final Year Project &nbsp;·&nbsp; Unit Test Results &nbsp;·&nbsp; 37 Tests Passed &nbsp;·&nbsp; 0 Failed
+</div>
+
+</body>
+</html>

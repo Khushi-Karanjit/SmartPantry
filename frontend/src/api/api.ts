@@ -484,8 +484,8 @@ export function cleanupExpiredPantryApi() {
   return request<{ message: string; count: number }>("/pantry/cleanup", { method: "DELETE" });
 }
 
-export function restockPantryItemApi(id: string) {
-  return request<{ message: string; item: PantryItem }>(`/pantry/${id}/restock`, { method: "PATCH" });
+export function restockPantryItemApi(id: string, quantity: number = 1) {
+  return request<{ message: string; item: PantryItem; restockStatus: string }>(`/pantry/${id}/restock`, { method: "PATCH", body: JSON.stringify({ quantity }) });
 }
 
 export function getCategoriesApi() {

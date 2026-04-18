@@ -227,8 +227,8 @@ export default function PantrySetup() {
                         </div>
 
                         <div className="flex flex-wrap gap-1.5 min-h-[50px] content-start">
-                           {p.items.slice(0, 3).map((it) => (
-                              <span key={it.name} className="px-2 py-0.5 rounded-lg bg-white/40 border border-white/60 text-[8px] font-bold text-slate-500 uppercase tracking-widest backdrop-blur-sm">
+                           {p.items.slice(0, 3).map((it, idx) => (
+                              <span key={`${it.name}-${idx}`} className="px-2 py-0.5 rounded-lg bg-white/40 border border-white/60 text-[8px] font-bold text-slate-500 uppercase tracking-widest backdrop-blur-sm">
                                  {it.name}
                               </span>
                            ))}
@@ -312,11 +312,11 @@ export default function PantrySetup() {
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                             {activePreset.items.map((it) => {
+                             {activePreset.items.map((it, idx) => {
                                 const isChecked = selectedItems.has(it.name);
                                 return (
                                    <button
-                                     key={it.name}
+                                     key={`${it.name}-${idx}`}
                                      onClick={() => toggleItem(it.name)}
                                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isChecked ? 'bg-white border-blue-100 shadow-sm' : 'bg-slate-100/50 border-transparent opacity-50'}`}
                                    >

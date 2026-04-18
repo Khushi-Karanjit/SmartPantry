@@ -246,23 +246,52 @@ async function addPantryItem(req, res) {
     const categoryDoc = await Category.findOne({ name: ingredient.category }).lean();
     const q = Number(quantity ?? 1);
 
+    // Check status of existing item
+    const existingItem = await PantryItem.findOne({ userId, ingredientId: ingredient._id }).populate("categoryId").populate("ingredientId");
+    
+    let restockStatus = 'standard';
+    let updateOp = { $inc: { quantity: q } };
+
+    if (existingItem) {
+      const cat = existingItem.categoryId || {};
+      const shelfLife = ingredient.shelfLifeDays || cat.shelfLifeDays || 30;
+      const base = existingItem.addedAt || existingItem.createdAt || new Date();
+      const expiryDate = computeExpiryIso(base, shelfLife);
+      const d = daysUntil(expiryDate);
+
+      if (d < 0) {
+        restockStatus = 'cleared';
+        updateOp = { $set: { quantity: q } }; // Discard old, fresh start
+      } else if (d <= 2) {
+        restockStatus = 'urgent_merge';
+        // and updateOp remains $inc
+      }
+    }
+
+    const updateData = {
+      $set: { 
+        name: ingredient.name.toUpperCase(), 
+        categoryId: categoryDoc?._id,
+        unit: unit || ingredient.defaultUnit || "pcs",
+        addedAt: new Date(),
+        source: presetKey ? "preset" : "manual",
+        presetKey: presetKey || null
+      }
+    };
+
+    if (restockStatus === 'cleared') {
+      updateData.$set.quantity = q;
+    } else {
+      updateData.$inc = { quantity: q };
+    }
+
     const item = await PantryItem.findOneAndUpdate(
       { userId, ingredientId: ingredient._id },
-      {
-        $inc: { quantity: q },
-        $set: { 
-          name: ingredient.name.toUpperCase(), 
-          categoryId: categoryDoc?._id,
-          unit: unit || ingredient.defaultUnit || "pcs",
-          addedAt: new Date(),
-          source: presetKey ? "preset" : "manual",
-          presetKey: presetKey || null
-        }
-      },
+      updateData,
       { upsert: true, new: true }
     );
 
-    return res.status(201).json({ item });
+    return res.status(201).json({ item, restockStatus });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to add pantry item" });
@@ -358,9 +387,43 @@ async function restockPantryItem(req, res) {
   try {
     const userId = req.userId;
     const { id } = req.params;
-    const item = await PantryItem.findOneAndUpdate({ _id: id, userId }, { $set: { addedAt: new Date() } }, { new: true });
-    if (!item) return res.status(404).json({ message: "Item not found" });
-    return res.json({ message: "Item restocked successfully", item });
+    const q = Number(req.body?.quantity ?? 1);
+
+    const existingItem = await PantryItem.findOne({ _id: id, userId })
+      .populate("categoryId")
+      .populate("ingredientId");
+    if (!existingItem) return res.status(404).json({ message: "Item not found" });
+
+    const cat = existingItem.categoryId || {};
+    const ing = existingItem.ingredientId || {};
+    const shelfLife = ing.shelfLifeDays || cat.shelfLifeDays || 30;
+    const base = existingItem.addedAt || existingItem.createdAt || new Date();
+    const expiryDate = computeExpiryIso(base, shelfLife);
+    const d = daysUntil(expiryDate);
+
+    let restockStatus = 'standard';
+    let updateOp;
+
+    if (d < 0) {
+      // EXPIRED — discard old quantity, start fresh
+      restockStatus = 'cleared';
+      updateOp = { $set: { quantity: q, addedAt: new Date() } };
+    } else if (d <= 2) {
+      // URGENT — merge quantities, warn user
+      restockStatus = 'urgent_merge';
+      updateOp = { $inc: { quantity: q }, $set: { addedAt: new Date() } };
+    } else {
+      // FRESH — standard increment
+      updateOp = { $inc: { quantity: q }, $set: { addedAt: new Date() } };
+    }
+
+    const item = await PantryItem.findOneAndUpdate(
+      { _id: id, userId },
+      updateOp,
+      { new: true }
+    );
+
+    return res.json({ message: "Item restocked successfully", item, restockStatus });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to restock item" });

@@ -312,8 +312,8 @@ export default function Analytics() {
                onChange={(e) => setSelectedCuisine(e.target.value)}
              >
                <option value="Global">All Cuisines</option>
-               {data.cuisineMastery.map(c => (
-                 <option key={c.name} value={c.name}>{c.name.toUpperCase()}</option>
+               {data.cuisineMastery.map((c, idx) => (
+                 <option key={`${c.name}-${idx}`} value={c.name}>{c.name.toUpperCase()}</option>
                ))}
              </select>
              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-blue-600 transition-all" />

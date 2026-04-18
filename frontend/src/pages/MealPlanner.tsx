@@ -508,7 +508,7 @@ export default function MealPlanner() {
                                 ${done 
                                   ? "bg-emerald-50 border-emerald-100 opacity-60" 
                                   : "bg-slate-50 border-slate-200 hover:border-slate-200 shadow-md"}`}
-                              key={item.name}
+                              key={`${item.name}-${idx}`}
                             >
                               <div className="space-y-1">
                                  <p className={`text-xs font-bold uppercase transition-colors ${done ? "text-emerald-600" : "text-slate-900"}`}>{item.name}</p>

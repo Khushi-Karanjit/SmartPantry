@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Database, Tag, Calendar, Plus, Loader2, Sparkles, Hash } from "lucide-react";
-import { createCustomIngredientApi, type Ingredient, PANTRY_UNITS } from "../api/api";
+import { X, Database, Tag, Calendar, Plus, Loader2, Sparkles, Hash, Layers } from "lucide-react";
+import { createCustomIngredientApi, getCategoriesApi, type Ingredient, type Category, PANTRY_UNITS } from "../api/api";
 
 export default function AddCustomIngredientModal({
   open,
@@ -23,15 +23,36 @@ export default function AddCustomIngredientModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Category selection state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState(category);
+
   useEffect(() => {
+    async function load() {
+      try {
+        const res = await getCategoriesApi();
+        setCategories(res.categories || []);
+        
+        // If initial category is 'All' or empty, pick the first one from list if available
+        if (category.toLowerCase() === "all" || !category) {
+          if (res.categories?.length > 0) setSelectedCategory(res.categories[0].name);
+        } else {
+          setSelectedCategory(category);
+        }
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    }
+    
     if (open) {
+      load();
       setDraftName(name);
       setDefaultUnit("pcs");
-      setShelfLifeDays(14); // Default to 2 weeks for convenience
+      setShelfLifeDays(14); 
       setKeywords("");
       setError(null);
     }
-  }, [name, open]);
+  }, [name, open, category]);
 
   const tooShort = draftName.trim().length < 2;
   const badShelf = shelfLifeDays < 0 || shelfLifeDays > 3650;
@@ -43,7 +64,7 @@ export default function AddCustomIngredientModal({
       setError(null);
       const res = await createCustomIngredientApi({
         name: draftName.trim(),
-        category,
+        category: selectedCategory,
         defaultUnit,
         shelfLifeDays,
         keywords: keywords
@@ -114,7 +135,23 @@ export default function AddCustomIngredientModal({
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
-                   {/* Unit */}
+                  {/* Category Selection */}
+                  <div className="col-span-2 space-y-2">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Layers size={12} className="text-blue-500" /> Classification Category *
+                    </label>
+                    <select 
+                      value={selectedCategory} 
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-semibold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all shadow-sm appearance-none cursor-pointer"
+                    >
+                      {categories.map(c => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Unit */}
                   <div className="space-y-2">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <Hash size={12} className="text-indigo-500" /> Default Unit

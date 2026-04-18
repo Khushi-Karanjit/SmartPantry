@@ -80,6 +80,7 @@ export default function Pantry() {
   const [items, setItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [presets, setPresets] = useState<PantryPreset[]>([]);
@@ -92,12 +93,8 @@ export default function Pantry() {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
-  const [addForm, setAddForm] = useState({
-    category: "",
-    ingredient: null as Ingredient | null,
-    quantity: 1,
-    unit: "",
-  });
+  type CartItem = { ingredient: Ingredient; quantity: number; unit: string };
+  const [addCart, setAddCart] = useState<CartItem[]>([]);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [editId, setEditId] = useState<string>("");
@@ -110,6 +107,10 @@ export default function Pantry() {
 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string>("");
+
+  // Restock quantity modal
+  const [restockModal, setRestockModal] = useState<{ open: boolean; id: string; name: string; currentQty: number; unit: string } | null>(null);
+  const [restockQty, setRestockQty] = useState(1);
 
   async function fetchCategories() {
     try {
@@ -165,11 +166,19 @@ export default function Pantry() {
     fetchItems(page);
   }, [page, status]);
 
-  useEffect(() => {
-    if (!addForm.category && categories.length > 0) {
-      setAddForm((p) => ({ ...p, category: categories[0].name }));
-    }
-  }, [categories]);
+  function addToCart(ingredient: Ingredient) {
+    // Prevent duplicate
+    if (addCart.find(c => c.ingredient._id === ingredient._id)) return;
+    setAddCart(prev => [...prev, { ingredient, quantity: 1, unit: ingredient.defaultUnit || "pcs" }]);
+  }
+
+  function removeFromCart(idx: number) {
+    setAddCart(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateCartItem(idx: number, field: "quantity" | "unit", value: string | number) {
+    setAddCart(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+  }
 
   const filtered = items;
 
@@ -191,21 +200,27 @@ export default function Pantry() {
     setOpenEdit(true);
   }
 
-  async function addItem() {
+  async function addAllItems() {
+    if (addCart.length === 0) { setError("Please add at least one item."); return; }
     try {
       setSaving(true);
-      if (!addForm.ingredient) {
-        setError("Please select an item first.");
-        return;
+      const messages: string[] = [];
+      for (const cartItem of addCart) {
+        const res = await addPantryItemApi({
+          ingredientId: cartItem.ingredient._id,
+          quantity: Number(cartItem.quantity) || 1,
+          unit: cartItem.unit || cartItem.ingredient.defaultUnit || "pcs",
+          presetKey: tab === "all" ? undefined : tab
+        });
+        if (res.restockStatus === 'cleared') messages.push(`${cartItem.ingredient.name}: expired stock discarded.`);
+        else if (res.restockStatus === 'urgent_merge') messages.push(`${cartItem.ingredient.name}: use older stock first!`);
       }
-      await addPantryItemApi({
-        ingredientId: addForm.ingredient._id,
-        quantity: Number(addForm.quantity) || 1,
-        unit: addForm.unit || addForm.ingredient.defaultUnit || "pcs",
-        presetKey: tab === "all" ? undefined : tab
-      });
+      if (messages.length > 0) {
+        setInfoMessage(messages.join(" · "));
+        setTimeout(() => setInfoMessage(""), 8000);
+      }
       setOpenAdd(false);
-      setAddForm({ category: categories[0]?.name || "", ingredient: null, quantity: 1, unit: "" });
+      setAddCart([]);
       await fetchItems(1);
     } catch (e: any) {
       setError(e?.message || "Addition failed.");
@@ -263,11 +278,26 @@ export default function Pantry() {
     }
   }
 
-  async function restockItem(id: string) {
+  function openRestockModal(it: PantryItem) {
+    setRestockModal({ open: true, id: it._id, name: it.name, currentQty: it.quantity ?? 0, unit: it.unit || "pcs" });
+    setRestockQty(1);
+  }
+
+  async function confirmRestock() {
+    if (!restockModal) return;
     try {
       setSaving(true);
-      await restockPantryItemApi(id);
+      const res = await restockPantryItemApi(restockModal.id, restockQty);
+      if (res.restockStatus === 'cleared') {
+        setInfoMessage(`Safety Check: Expired stock of ${restockModal.name} was discarded. Fresh ${restockQty} ${restockModal.unit} added.`);
+      } else if (res.restockStatus === 'urgent_merge') {
+        setInfoMessage(`Restocked ${restockModal.name}. Please use your older stock first!`);
+      } else {
+        setInfoMessage(`${restockModal.name} restocked — quantity updated to ${(restockModal.currentQty) + restockQty} ${restockModal.unit}.`);
+      }
+      setRestockModal(null);
       await fetchItems(page);
+      setTimeout(() => setInfoMessage(""), 6000);
     } catch (e: any) {
       setError(e?.message || "Restock failed.");
     } finally {
@@ -313,6 +343,35 @@ export default function Pantry() {
             </button>
           </div>
         </div>
+
+        <AnimatePresence>
+          {infoMessage && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -20 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -20 }}
+              className="px-2"
+            >
+              <div className="bg-blue-50 border border-blue-100 rounded-[2rem] p-5 flex items-center justify-between shadow-lg shadow-blue-500/5 group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm group-hover:rotate-12 transition-transform">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-blue-900 uppercase tracking-widest">Kitchen Intelligence</p>
+                    <p className="text-sm font-medium text-blue-600">{infoMessage}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setInfoMessage("")}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-blue-300 hover:text-blue-600 hover:bg-white transition-all"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* HIGH-TECH TABS (DYNAMIC) */}
         <div className="flex items-center gap-2 px-2 overflow-x-auto pb-4 custom-scrollbar whitespace-nowrap">
@@ -547,9 +606,9 @@ export default function Pantry() {
                           <td className="px-8 py-5 text-right">
                             <div className="flex items-center justify-end gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
                               <button 
-                                onClick={() => restockItem(it._id)} 
+                                onClick={() => openRestockModal(it)} 
                                 className="p-3 rounded-xl bg-green-50 text-green-600 border border-green-100 hover:bg-green-100 transition-all shadow-md"
-                                title="Update date"
+                                title="Restock — add more quantity"
                               >
                                 <RotateCcw size={16} />
                               </button>
@@ -613,6 +672,70 @@ export default function Pantry() {
           </div>
         )}
 
+        {/* RESTOCK QUANTITY MODAL */}
+        <AnimatePresence>
+          {restockModal?.open && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => setRestockModal(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold tracking-tight text-slate-900 capitalize">{restockModal.name.toLowerCase()}</h3>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Restock Item</p>
+                  </div>
+                  <button onClick={() => setRestockModal(null)} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Current stock info */}
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Stock</p>
+                    <p className="text-2xl font-bold text-slate-800">{restockModal.currentQty} <span className="text-sm font-medium text-slate-400">{restockModal.unit}</span></p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">After Restock</p>
+                    <p className="text-2xl font-bold text-green-600">{restockModal.currentQty + restockQty} <span className="text-sm font-medium text-slate-400">{restockModal.unit}</span></p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity to Add</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={restockQty}
+                    onChange={(e) => setRestockQty(Math.max(1, Number(e.target.value)))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 text-center text-xl font-bold focus:outline-none focus:border-green-400 focus:ring-4 focus:ring-green-50 transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => setRestockModal(null)}>Cancel</button>
+                  <button
+                    className="flex-1 py-4 rounded-2xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200 disabled:opacity-50"
+                    onClick={confirmRestock}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : `Add ${restockQty} ${restockModal.unit}`}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* HIGH-TECH MODALS */}
         <AnimatePresence>
           {(openAdd || openEdit) && (
@@ -621,100 +744,159 @@ export default function Pantry() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
-              onClick={() => { setOpenAdd(false); setOpenEdit(false); }}
+              onClick={() => { setOpenAdd(false); setOpenEdit(false); setAddCart([]); }}
             >
               <motion.div 
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                className="bg-white w-full max-w-lg rounded-3xl p-8 space-y-8 shadow-2xl relative"
+                className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl relative flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex justify-between items-center">
+                {/* HEADER */}
+                <div className="flex justify-between items-center mb-6 flex-shrink-0">
                   <div>
-                    <h3 className="text-2xl font-bold tracking-tight text-slate-900">{openAdd ? "Add New" : "Edit"} Item</h3>
+                    <h3 className="text-2xl font-bold tracking-tight text-slate-900">
+                      {openAdd ? "Add Items" : "Edit Item"}
+                    </h3>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Kitchen Manager</p>
                   </div>
-                  <button onClick={() => { setOpenAdd(false); setOpenEdit(false); }} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                  <button onClick={() => { setOpenAdd(false); setOpenEdit(false); setAddCart([]); }} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all">
                     <X size={20} />
                   </button>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Category</label>
-                    <div className="relative group">
-                      <select
-                        value={openAdd ? addForm.category : editForm.category}
-                        onChange={(e) =>
-                          openAdd 
-                            ? setAddForm({ ...addForm, category: e.target.value, ingredient: null, unit: "" })
-                            : setEditForm({ ...editForm, category: e.target.value, ingredient: null, unit: "" })
-                        }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 appearance-none focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
-                      >
-                        {categories.map((c) => (
-                          <option key={c._id} value={c.name} className="bg-white">{c.name}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Food Name</label>
-                    <IngredientSearchSelect
-                      category={openAdd ? addForm.category : editForm.category}
-                      value={openAdd ? addForm.ingredient : editForm.ingredient}
-                      onChange={(ingredient) =>
-                        openAdd
-                          ? setAddForm((p) => ({ ...p, ingredient, unit: ingredient ? ingredient.defaultUnit || p.unit : "" }))
-                          : setEditForm((p) => ({ ...p, ingredient, unit: ingredient ? ingredient.defaultUnit || p.unit : "" }))
-                      }
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={openAdd ? addForm.quantity : editForm.quantity}
-                        onChange={(e) => openAdd ? setAddForm({ ...addForm, quantity: Number(e.target.value) }) : setEditForm({ ...editForm, quantity: Number(e.target.value) })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
+                {openAdd ? (
+                  /* ── MULTI-ITEM ADD CART ── */
+                  <>
+                    {/* Search */}
+                    <div className="flex-shrink-0 space-y-1 mb-4">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Search & Add Ingredients</p>
+                      <IngredientSearchSelect
+                        category=""
+                        value={null}
+                        onChange={(ingredient) => { if (ingredient) addToCart(ingredient); }}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Unit</label>
-                      <select
-                        value={openAdd ? addForm.unit : editForm.unit}
-                        onChange={(e) => openAdd ? setAddForm({ ...addForm, unit: e.target.value }) : setEditForm({ ...editForm, unit: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer"
+
+                    {/* Cart list */}
+                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-[60px] mb-4">
+                      {addCart.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                          <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No items yet</p>
+                          <p className="text-[11px] text-slate-300 mt-1">Search above to add ingredients</p>
+                        </div>
+                      ) : (
+                        addCart.map((cartItem, idx) => (
+                          <div key={cartItem.ingredient._id} className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-slate-800 capitalize truncate">{cartItem.ingredient.name}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{cartItem.ingredient.category}</p>
+                            </div>
+                            <input
+                              type="number"
+                              min={1}
+                              value={cartItem.quantity}
+                              onChange={(e) => updateCartItem(idx, "quantity", Number(e.target.value))}
+                              className="w-16 text-center bg-white border border-slate-200 rounded-xl py-2 px-2 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+                            />
+                            <select
+                              value={cartItem.unit}
+                              onChange={(e) => updateCartItem(idx, "unit", e.target.value)}
+                              className="w-20 bg-white border border-slate-200 rounded-xl py-2 px-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 appearance-none cursor-pointer"
+                            >
+                              {PANTRY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(idx)}
+                              className="w-8 h-8 flex items-center justify-center rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-all flex-shrink-0"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex gap-4 flex-shrink-0">
+                      <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => { setOpenAdd(false); setAddCart([]); }}>Cancel</button>
+                      <button
+                        className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200"
+                        onClick={addAllItems}
+                        disabled={saving || addCart.length === 0}
                       >
-                         {PANTRY_UNITS.map(u => (
-                           <option key={u} value={u}>{u}</option>
-                         ))}
-                      </select>
+                        {saving ? "Saving..." : `Add ${addCart.length > 0 ? addCart.length + " " : ""}Item${addCart.length !== 1 ? "s" : ""}`}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* ── SINGLE ITEM EDIT ── */
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Category</label>
+                      <div className="relative group">
+                        <select
+                          value={editForm.category}
+                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value, ingredient: null, unit: "" })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 appearance-none focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
+                        >
+                          {categories.map((c) => (
+                            <option key={c._id} value={c.name} className="bg-white">{c.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Food Name</label>
+                      <IngredientSearchSelect
+                        category={editForm.category}
+                        value={editForm.ingredient}
+                        onChange={(ingredient) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            ingredient,
+                            category: ingredient ? ingredient.category : p.category,
+                            unit: ingredient ? ingredient.defaultUnit || p.unit : ""
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editForm.quantity}
+                          onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Unit</label>
+                        <select
+                          value={editForm.unit}
+                          onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer"
+                        >
+                          {PANTRY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                      <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => setOpenEdit(false)}>Cancel</button>
+                      <button className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200" onClick={saveEdit} disabled={saving}>
+                        {saving ? "Saving..." : "Save Changes"}
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button 
-                    className="flex-1 btn-ghost-futuristic text-sm py-4" 
-                    onClick={() => { setOpenAdd(false); setOpenEdit(false); }}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200" 
-                    onClick={openAdd ? addItem : saveEdit} 
-                    disabled={saving}
-                  >
-                    {saving ? "Saving..." : (openAdd ? "Add Item" : "Save Changes")}
-                  </button>
-                </div>
+                )}
               </motion.div>
             </motion.div>
           )}

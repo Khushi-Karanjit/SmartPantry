@@ -4,7 +4,22 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test": "jest --verbose smartpantry.test.js"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 15000,
+    "reporters": [
+      "default",
+      ["jest-html-reporter", {
+        "pageTitle": "SmartPantry — Unit Test Results",
+        "outputPath": "./test-report.html",
+        "includeFailureMsg": true,
+        "includeConsoleLog": false,
+        "theme": "lightTheme"
+      }]
+    ]
   },
   "keywords": [],
   "author": "",
@@ -27,6 +42,8 @@
     "ytranscript": "^1.1.1"
   },
   "devDependencies": {
+    "jest": "^30.3.0",
+    "jest-html-reporter": "^4.4.0",
     "nodemon": "^3.1.11"
   }
 }

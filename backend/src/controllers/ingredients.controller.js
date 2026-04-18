@@ -1,6 +1,8 @@
 const Ingredient = require("../models/Ingredient");
 const Category = require("../models/Category");
+const { normalizeName: singularNormalize, singularize } = require("../utils/singularize");
 
+// Keep local normalizeName for non-singularizing use (keywords etc.)
 function normalizeName(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -39,8 +41,14 @@ async function searchIngredients(req, res, next) {
     if (!includeCustom) query.isCustom = false;
 
     if (qRaw) {
-      const rx = new RegExp(escapeRegex(qRaw), "i");
-      query.$or = [{ name: rx }, { keywords: rx }];
+      // Singularize query so "apples" finds "apple"
+      const qSingular = singularize(qRaw.toLowerCase());
+      const terms = [...new Set([qRaw, qSingular])].map(t => new RegExp(escapeRegex(t), "i"));
+      query.$or = [
+        { name: { $in: terms } },
+        { keywords: { $in: terms } },
+        { name: new RegExp(escapeRegex(qSingular), "i") },
+      ];
     }
 
     const candidates = await Ingredient.find(query)
@@ -67,7 +75,8 @@ async function createCustomIngredient(req, res, next) {
   try {
     const { name, category, defaultUnit, shelfLifeDays, keywords } = req.body || {};
 
-    const normalizedName = normalizeName(name);
+    // Normalize and singularize the name before saving
+    const normalizedName = singularNormalize(name);
     if (normalizedName.length < 2 || normalizedName.length > 60) {
       return res.status(400).json({ message: "Name must be 2-60 characters." });
     }

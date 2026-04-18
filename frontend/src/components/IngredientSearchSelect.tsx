@@ -20,6 +20,11 @@ export default function IngredientSearchSelect({
   const [showModal, setShowModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Sync input with external value changes (e.g., form resets after submit)
+  useEffect(() => {
+    setQuery(value?.name || "");
+  }, [value]);
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -41,7 +46,7 @@ export default function IngredientSearchSelect({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await searchIngredientsApi({ q: query, category: category === "All" ? "" : category });
+        const res = await searchIngredientsApi({ q: query, category: "" });
         setResults(res.ingredients || []);
         setOpen(true);
       } catch (err) {
@@ -55,7 +60,7 @@ export default function IngredientSearchSelect({
   }, [query, category]);
 
   const selectIngredient = (ing: Ingredient) => {
-    setQuery(""); // Clear search after selection to allow multiple selections in many contexts
+    setQuery(""); // Clear so user can search next item; Edit modal name shown via value sync
     setOpen(false);
     setResults([]);
     onChange(ing);
