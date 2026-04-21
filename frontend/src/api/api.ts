@@ -15,7 +15,7 @@ export type AuthUser = {
 };
 
 export const PANTRY_UNITS = [
-  "pcs", "unit", "kg", "g", "lbs", "oz", "ml", "l", "cup", "tbsp", "tsp", "pack", "can", "bottle", "clove", "pinch"
+  "g", "kg", "ml", "l", "pcs"
 ];
 
 export type Recipe = {
@@ -133,7 +133,7 @@ export type AdminStats = {
   totalCookingActivities: number;
   reviewQueue: number;
   mostCookedRecipe: string;
-  mostUsedIngredient: string;
+  newUsersCount: number;
 };
 
 export type AdminActivity = {
@@ -158,7 +158,6 @@ export type UserProfile = {
   profile: User;
   stats: {
     totalPantryItems: number;
-    mostStoredIngredient: string;
     totalCooked: number;
   };
   recentLogs: any[];
@@ -183,7 +182,6 @@ export type AdminCookingLog = {
 
 export type AdminAnalytics = {
   mostCooked: { name: string; count: number }[];
-  ingredientStats: { name: string; count: number }[];
 };
 
 export type UserAnalytics = {

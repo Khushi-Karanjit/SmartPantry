@@ -57,7 +57,7 @@ export default function RecipeDetail() {
             setLoading(true);
             const res = await getRecipeApi(recipeId);
             setRecipe(res.recipe);
-            setServings(res.recipe.servings || 1);
+            setServings(1);
         } catch { setError(true); } 
         finally { setLoading(false); }
     };
@@ -176,18 +176,12 @@ export default function RecipeDetail() {
                             </div>
                         )}
                         <button 
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${recipe.isSaved ? "bg-pink-500 text-white shadow-lg shadow-pink-200" : "bg-white border border-slate-200 text-slate-400 hover:text-pink-500"}`}
-                            onClick={handleToggleSave}
-                        >
-                            <Heart size={18} fill={recipe.isSaved ? "currentColor" : "none"} />
-                        </button>
-                        <button 
                             className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all shadow-md ${cooked ? "bg-emerald-500 text-white" : "bg-slate-900 text-white hover:bg-slate-800"}`} 
                             onClick={handleLogCooked}
                             disabled={cooking}
                         >
                             {cooking ? <Loader2 className="animate-spin" size={14} /> : cooked ? <CheckCircle size={14} /> : <Zap size={14} />}
-                            {cooking ? "Logging..." : cooked ? "Cooked!" : "I cooked this"}
+                            {cooking ? "Logging..." : cooked ? "Logged!" : `Log ${servings} Serving${servings !== 1 ? 's' : ''}`}
                         </button>
                     </div>
                 }
@@ -197,7 +191,7 @@ export default function RecipeDetail() {
                 
                 {/* CINEMA HUB */}
                 <motion.div variants={item} className="relative">
-                    <div className="bg-[#FAFDFF] border border-slate-200 p-0 overflow-hidden shadow-md rounded-[2.5rem]">
+                    <div className="bg-[#FAFDFF] border border-slate-200 p-0 overflow-hidden shadow-md rounded-[2.5rem] relative">
                         {hasVideo ? (
                             <div className="relative aspect-video">
                                 <iframe
@@ -208,17 +202,25 @@ export default function RecipeDetail() {
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 />
-                                <div className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/90 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-slate-200 shadow-md backdrop-blur-md">
+                                <div className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/90 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-slate-200 shadow-md backdrop-blur-md pointer-events-none">
                                     <Video size={16} />
                                     <span>Interactive Guide</span>
                                 </div>
                             </div>
                         ) : (
                             <div className="relative aspect-[21/9] overflow-hidden">
-                                <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200"} alt={recipe.name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                                <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200"} alt={recipe.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                             </div>
                         )}
+                        
+                        {/* Floating Heart Button */}
+                        <button 
+                            className={`absolute top-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-xl z-10 ${recipe.isSaved ? "bg-pink-500 text-white shadow-pink-500/30" : "bg-white/90 text-slate-400 hover:bg-white hover:text-pink-500 hover:scale-110"}`}
+                            onClick={handleToggleSave}
+                        >
+                            <Heart size={22} fill={recipe.isSaved ? "currentColor" : "none"} />
+                        </button>
                     </div>
                 </motion.div>
 

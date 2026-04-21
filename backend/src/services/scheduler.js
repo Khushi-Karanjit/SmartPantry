@@ -9,8 +9,8 @@ const { sendEmail } = require("./email.service");
  * Initializes the automated email scheduler
  */
 const initScheduler = () => {
-  // 1. Weekly Recap: Every Sunday at 08:00 AM
-  cron.schedule("0 8 * * 0", async () => {
+  // 1. Weekly Recap: Every Sunday at 06:00 AM
+  cron.schedule("0 6 * * 0", async () => {
     console.log("[Scheduler] Starting Weekly Smart Pantry Status Broadcast...");
     try {
       const users = await User.find({ isActive: true });
@@ -28,9 +28,9 @@ const initScheduler = () => {
     }
   });
 
-  // 2. Daily Status Briefing: Every day at 08:00 AM
-  cron.schedule("0 8 * * *", async () => {
-    console.log("[Scheduler] Starting Daily Smart Pantry Status Broadcast...");
+  // 2. Daily Status Briefing: Every Night at 11:15 PM
+  cron.schedule("15 23 * * *", async () => {
+    console.log("[Scheduler] Starting Late-Night Smart Pantry Status Broadcast...");
     try {
       const users = await User.find({ isActive: true });
       for (const user of users) {
@@ -50,7 +50,7 @@ const initScheduler = () => {
 
   // High-frequency (30m) audit removed as per professional tone refinement.
 
-  console.log("[Scheduler] All Professional Email Jobs Initialized (8 AM Daily/Weekly).");
+  console.log("[Scheduler] All Professional Email Jobs Initialized (11:15 PM Daily).");
 };
 
 module.exports = { initScheduler };

@@ -26,7 +26,7 @@ import {
   CartesianGrid
 } from "recharts";
 
-const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#f43f5e", "#8b5cf6", "#6366f1"];
+const COLORS = ["#3b82f6", "#6366f1", "#94a3b8", "#1e293b", "#0ea5e9", "#4f46e5"];
 
 export default function AdminAnalytics() {
   const [data, setData] = useState<AdminAnalyticsType | null>(null);
@@ -102,13 +102,13 @@ export default function AdminAnalytics() {
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full min-w-0 max-w-full">
               
               {/* RECIPE POPULARITY CHART */}
-              <motion.section variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl overflow-hidden shadow-md flex flex-col min-w-0 max-w-full">
+              <motion.section variants={item} className="lg:col-span-2 bg-[#FAFDFF] border border-slate-200 rounded-3xl overflow-hidden shadow-md flex flex-col min-w-0 max-w-full">
                  <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between min-w-0">
                     <div className="flex items-center gap-3 min-w-0">
-                       <TrendingUp size={20} className="text-green-600 shrink-0" />
-                       <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">Most Cooked</h3>
+                       <TrendingUp size={20} className="text-blue-600 shrink-0" />
+                       <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">Recipe Popularity</h3>
                     </div>
-                    <div className="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-green-50 border border-green-200 text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest shrink-0">
+                    <div className="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] sm:text-xs font-bold text-blue-700 uppercase tracking-widest shrink-0">
                        Live Feed
                     </div>
                  </div>
@@ -133,7 +133,7 @@ export default function AdminAnalytics() {
                        </ResponsiveContainer>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 min-w-0">
                        {(data?.mostCooked || []).map((item: any, idx: number) => (
                          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors min-w-0" key={idx}>
                            <div className="flex items-center gap-3 min-w-0">
@@ -149,63 +149,14 @@ export default function AdminAnalytics() {
                     </div>
                  </div>
               </motion.section>
-
-              {/* INGREDIENT POPULARITY CHART */}
-              <motion.section variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl overflow-hidden shadow-md flex flex-col min-w-0 max-w-full">
-                 <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between min-w-0">
-                    <div className="flex items-center gap-3 min-w-0">
-                       <PieChartIcon size={20} className="text-blue-600 shrink-0" />
-                       <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">Top Ingredients</h3>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-blue-50 text-[10px] sm:text-xs font-bold text-blue-600 uppercase shrink-0">
-                       Archive Data
-                    </div>
-                 </div>
-
-                 <div className="p-4 sm:p-6 w-full min-w-0 space-y-8">
-                    <div className="h-[300px] w-full mt-4">
-                       <ResponsiveContainer width="100%" height="100%">
-                         <BarChart layout="vertical" data={data?.ingredientStats || []} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
-                           <CartesianGrid strokeDasharray="5 5" horizontal={false} stroke="#f1f5f9" />
-                           <XAxis type="number" hide />
-                           <YAxis dataKey="name" type="category" hide />
-                           <Tooltip 
-                              content={<CustomTooltip />} 
-                              cursor={{ fill: 'rgba(0,0,0,0.02)' }} 
-                           />
-                           <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={24}>
-                             {(data?.ingredientStats || []).map((_item: any, index: number) => (
-                               <Cell key={`cell-ing-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
-                             ))}
-                           </Bar>
-                         </BarChart>
-                       </ResponsiveContainer>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       {(data?.ingredientStats || []).map((item: any, idx: number) => (
-                         <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" key={idx}>
-                           <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[(idx + 2) % COLORS.length] }} />
-                              <span className="text-xs font-bold text-slate-700 truncate">{item.name}</span>
-                           </div>
-                           <div className="flex items-baseline gap-1 flex-shrink-0">
-                              <span className="text-lg font-bold text-slate-900">{item.count}</span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">USES</span>
-                           </div>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-              </motion.section>
            </div>
 
            {/* SYSTEM HEALTH CARDS */}
            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
-                { l: "Platform Uptime", v: "99.98%", i: <Zap size={20} />, border: "border-yellow-200", iconBg: "bg-yellow-50 text-yellow-600" },
-                { l: "Network Speed", v: "1.2 GB/S", i: <Activity size={20} />, border: "border-green-200", iconBg: "bg-green-50 text-green-600" },
-                { l: "Data Integrity", v: "Optimized", i: <Layers size={20} />, border: "border-blue-200", iconBg: "bg-blue-50 text-blue-600" }
+                { l: "Platform Uptime", v: "99.98%", i: <Zap size={20} />, border: "border-slate-200", iconBg: "bg-blue-50 text-blue-600" },
+                { l: "Network Speed", v: "1.2 GB/S", i: <Activity size={20} />, border: "border-slate-200", iconBg: "bg-slate-100 text-slate-600" },
+                { l: "Data Integrity", v: "Optimized", i: <Layers size={20} />, border: "border-slate-200", iconBg: "bg-indigo-50 text-indigo-600" }
               ].map(s => (
                 <motion.div key={s.l} variants={item} className={`bg-white border rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow ${s.border}`}>
                    <div className="space-y-1">

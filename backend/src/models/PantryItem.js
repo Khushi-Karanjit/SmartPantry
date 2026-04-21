@@ -17,7 +17,7 @@ const PantryItemSchema = new mongoose.Schema(
 
     // Keep these if you already have them
     quantity: { type: Number, default: 1, min: 0 },
-    unit: { type: String, default: "pcs" },
+    unit: { type: String, enum: ['g', 'kg', 'ml', 'l', 'pcs'], default: "pcs" },
 
     // NEW: base date used for expiry calculation
     addedAt: { type: Date, default: Date.now, index: true },

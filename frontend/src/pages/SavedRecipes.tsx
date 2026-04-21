@@ -110,6 +110,7 @@ export default function SavedRecipes() {
                     <img 
                       src={recipe.imageUrl || "https://placehold.co/600x400?text=Recipe"} 
                       alt={recipe.name} 
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />

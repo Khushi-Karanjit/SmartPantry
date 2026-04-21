@@ -14,20 +14,31 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (loading) return;
+    if (loading || verifying) return;
 
     setError(null);
     setSuccess(null);
+
+    // ── Client-side format check (instant, no API needed) ──
+    if (!username.trim() || !email.trim() || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address (e.g. name@example.com).");
+      return;
+    }
+    // ──────────────────────────────────────────────────────
+
+    setVerifying(true);
     setLoading(true);
 
     try {
-      if (!username.trim() || !email.trim() || !password) {
-        throw new Error("Please fill in all fields.");
-      }
-
       await registerApi({
         username: username.trim(),
         email: email.trim(),
@@ -40,6 +51,7 @@ export default function Register() {
       setError(e instanceof Error ? e.message : "Failed to create account. Please try again.");
     } finally {
       setLoading(false);
+      setVerifying(false);
     }
   }
 
@@ -134,22 +146,48 @@ export default function Register() {
             </div>
 
             {success && (
-              <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 text-sm font-medium">
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium flex items-center gap-3"
+              >
+                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">✓</div>
                 {success}
-              </div>
+              </motion.div>
+            )}
+
+            {verifying && !error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 text-sm font-medium flex items-center gap-3"
+              >
+                <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                Verifying your email address...
+              </motion.div>
             )}
             
             {error && (
-              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium">
-                {error}
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium flex items-start gap-3"
+              >
+                <div className="w-5 h-5 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0 mt-0.5 text-xs font-black">✕</div>
+                <span>{error}</span>
+              </motion.div>
             )}
 
             <button 
-              className="bg-slate-900 text-white w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg" 
-              disabled={loading}
+              className="bg-slate-900 text-white w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg disabled:opacity-60" 
+              disabled={loading || verifying}
             >
-              {loading ? (
+              {verifying ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying Email...
+                </>
+              ) : loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>

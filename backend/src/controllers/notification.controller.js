@@ -30,6 +30,15 @@ exports.getNotifications = async (req, res) => {
       } },
       {
         $lookup: {
+          from: "ingredients",
+          localField: "ingredientId",
+          foreignField: "_id",
+          as: "ingredient",
+        },
+      },
+      { $unwind: { path: "$ingredient", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
           from: "categories",
           localField: "categoryId",
           foreignField: "_id",
@@ -39,14 +48,20 @@ exports.getNotifications = async (req, res) => {
       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
       {
         $addFields: {
-          shelfLifeDays: { $ifNull: ["$category.shelfLifeDays", 0] },
+          shelfLifeDays: {
+            $cond: {
+              if: { $gt: ["$ingredient.shelfLifeDays", 0] },
+              then: "$ingredient.shelfLifeDays",
+              else: { $ifNull: ["$category.shelfLifeDays", 30] }
+            }
+          },
         },
       },
       {
         $addFields: {
           expiryAt: {
             $dateAdd: {
-              startDate: "$addedAt",
+              startDate: { $ifNull: ["$addedAt", "$createdAt"] },
               unit: "day",
               amount: "$shelfLifeDays",
             },

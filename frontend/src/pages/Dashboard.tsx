@@ -6,7 +6,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
 import DashboardSkeleton from "../components/DashboardSkeleton";
-import { getDashboardSummaryApi } from "../api/api";
+import { getDashboardSummaryApi, testReportEmailApi } from "../api/api";
 import type { DashboardSummary } from "../api/api";
 import {
   CheckCircle2,
@@ -19,7 +19,10 @@ import {
   PlusSquare,
   Activity,
   Info,
-  Trash2
+  Trash2,
+  Mail,
+  Loader2,
+  Check
 } from "lucide-react";
 
 // Removed local formatRelative in favor of centralized timeUtils.ts
@@ -36,6 +39,8 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [isEmailing, setIsEmailing] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sent">("idle");
 
   useEffect(() => {
     let alive = true;
@@ -53,6 +58,19 @@ export default function Dashboard() {
     })();
     return () => { alive = false; };
   }, []);
+
+  const handleManualEmail = async () => {
+    try {
+      setIsEmailing(true);
+      await testReportEmailApi();
+      setEmailStatus("sent");
+      setTimeout(() => setEmailStatus("idle"), 3000);
+    } catch (err: any) {
+      console.error("Manual email failed", err);
+    } finally {
+      setIsEmailing(false);
+    }
+  };
 
   const stats = data?.stats;
   const topComposition = useMemo(() => {
@@ -190,6 +208,29 @@ export default function Dashboard() {
                         <p className="font-bold text-slate-800">My Kitchen Setup</p>
                         <p className="text-xs text-slate-500 mt-1">Easily add new items to your kitchen.</p>
                      </div>
+                  </button>
+
+                  <button 
+                    onClick={handleManualEmail} 
+                    disabled={isEmailing}
+                    className={`group col-span-2 flex items-center justify-between p-6 rounded-2xl border transition-all text-left shadow-md
+                      ${emailStatus === 'sent' 
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                        : 'bg-[#FAFDFF] border-slate-200 hover:border-blue-200 hover:bg-blue-50/50'}`}
+                  >
+                     <div className="flex items-center gap-4">
+                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all
+                         ${emailStatus === 'sent' ? 'bg-emerald-500 text-white' : 'bg-amber-50 text-amber-600'}`}>
+                          {isEmailing ? <Loader2 className="animate-spin" size={24} /> : emailStatus === 'sent' ? <Check size={24} /> : <Mail size={24} />}
+                       </div>
+                       <div>
+                          <p className="font-bold">{emailStatus === 'sent' ? 'Status Report Sent!' : 'Send Nightly Update Now'}</p>
+                          <p className={`text-xs mt-1 ${emailStatus === 'sent' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                            {emailStatus === 'sent' ? 'Check your inbox for the kitchen audit.' : 'Trigger the scheduled 11:15 PM report immediately.'}
+                          </p>
+                       </div>
+                     </div>
+                     <ChevronRight size={20} className={emailStatus === 'sent' ? 'text-emerald-400' : 'text-slate-300'} />
                   </button>
                </div>
             </motion.div>

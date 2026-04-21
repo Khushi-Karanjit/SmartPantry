@@ -371,7 +371,7 @@ export default function Analytics() {
           {/* HOLOGRAPHIC VISUALIZATIONS */}
           <div className="xl:col-span-8 space-y-8">
              {/* ENERGY ACTIVITY CHART */}
-              <motion.div variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-8 overflow-hidden shadow-md">
+              <motion.div variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-8 shadow-md">
                 <div className="flex items-center justify-between px-2">
                    <div className="space-y-1">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
@@ -414,7 +414,7 @@ export default function Analytics() {
              </motion.div>
 
              {/* MACRO COMPOSITION CHART */}
-              <motion.div variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-8 overflow-hidden shadow-md">
+              <motion.div variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-8 shadow-md">
                 <div className="flex items-center justify-between px-2">
                    <div className="space-y-1">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
@@ -512,25 +512,44 @@ function MetricCard({
   );
 }
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-[#FAFDFF] border border-slate-200 p-4 shadow-xl rounded-2xl">
-        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-50 pb-2">
-          {new Date(label).toDateString().toUpperCase()}
-        </p>
-        <div className="space-y-2">
-          {payload.map((p: any, i: number) => (
-            <div key={i} className="flex items-center justify-between gap-8">
-               <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">{p.name}</span>
-               <span className="text-lg font-bold tracking-tight" style={{ color: p.color || p.fill }}>
-                 {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}{p.name !== 'calories' ? 'g' : ''}
-               </span>
-            </div>
-          ))}
-        </div>
+function CustomTooltip({ active, payload, label, coordinate, viewBox }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  // Safe defaults to prevent the tooltip from disappearing if Recharts hasn't calculated bounds yet
+  const x = coordinate?.x || 0;
+  const y = coordinate?.y || 0;
+  const width = viewBox?.width || 1000;
+  const height = viewBox?.height || 1000;
+
+  const isRightSide = x > width * 0.6;
+  const isBottomSide = y > height * 0.6;
+
+  return (
+    <div 
+      className="bg-white/95 backdrop-blur-xl border border-slate-200 p-5 shadow-2xl rounded-2xl z-[9999] pointer-events-none min-w-[200px] transition-all duration-200"
+      style={{
+        transform: `translate(${isRightSide ? '-100%' : '10px'}, ${isBottomSide ? '-100%' : '10px'})`,
+        opacity: (x === 0 && y === 0) ? 0 : 1 // Hide only if we literally have no position
+      }}
+    >
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2 flex items-center justify-between">
+         <span>{new Date(label).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+         <span className="text-blue-600 text-[8px] bg-blue-50 px-2 py-0.5 rounded-full">SNAPSHOT</span>
+      </p>
+      <div className="space-y-3">
+        {payload.map((p: any, i: number) => (
+          <div key={i} className="flex items-center justify-between gap-8">
+             <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ background: p.color || p.fill }} />
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">{p.name}</span>
+             </div>
+             <span className="text-sm font-black tracking-tight text-slate-900 font-mono">
+               {typeof p.value === 'number' ? p.value.toLocaleString() : p.value}
+               <span className="text-[9px] text-slate-400 ml-1 font-sans font-normal lowercase">{p.name === 'calories' ? 'kcal' : 'g'}</span>
+             </span>
+          </div>
+        ))}
       </div>
-    );
-  }
-  return null;
+    </div>
+  );
 }

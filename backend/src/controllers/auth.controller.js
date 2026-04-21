@@ -31,6 +31,53 @@ async function register(req, res, next) {
       return res.status(409).json({ message: "User already exists (email or username)" });
     }
 
+    // ── AbstractAPI Email Reputation Check ──────────────────────────────────
+    const abstractApiKey = process.env.ABSTRACT_API_KEY;
+    if (abstractApiKey && abstractApiKey !== "your_key_here") {
+      try {
+        const apiUrl = `https://emailreputation.abstractapi.com/v1/?api_key=${abstractApiKey}&email=${encodeURIComponent(normalizedEmail)}`;
+        const apiRes = await fetch(apiUrl);
+        const data = await apiRes.json();
+
+        console.log("[Auth] AbstractAPI reputation response:", JSON.stringify(data));
+
+        // If AbstractAPI returned an error (bad key, quota exceeded, etc.)
+        if (data.error) {
+          console.warn("[Auth] AbstractAPI error:", data.error.message, "— skipping check");
+        } else {
+          const deliverability = data.email_deliverability || {};
+          const quality       = data.email_quality       || {};
+          const risk          = data.email_risk          || {};
+
+          // 1. Invalid email format
+          if (deliverability.is_format_valid === false) {
+            return res.status(400).json({ message: "This email address has an invalid format. Please use a valid email (e.g. name@example.com)." });
+          }
+          // 2. Domain has no MX records — domain does not exist or cannot receive mail
+          if (deliverability.is_mx_valid === false) {
+            return res.status(400).json({ message: "This email domain does not exist or cannot receive emails. Please use a real email address." });
+          }
+          // 3. SMTP check failed — mailbox does not exist
+          if (deliverability.is_smtp_valid === false && deliverability.status === "undeliverable") {
+            return res.status(400).json({ message: "This email address does not appear to exist. Please enter a real, working email address." });
+          }
+          // 4. Disposable / throwaway email (e.g. mailinator, guerrillamail)
+          if (quality.is_disposable === true) {
+            return res.status(400).json({ message: "Disposable or temporary email addresses are not allowed. Please use your real email." });
+          }
+          // 5. High risk domain or address
+          if (risk.address_risk_status === "high" || risk.domain_risk_status === "high") {
+            return res.status(400).json({ message: "This email address has been flagged as high risk. Please use a different email address." });
+          }
+        }
+      } catch (apiErr) {
+        // Network failure or unexpected error — log and continue (do not block registration)
+        console.warn("[Auth] AbstractAPI check failed, skipping:", apiErr.message);
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+
     const passwordHash = await bcrypt.hash(password, 10);
 
     const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).toLowerCase().trim() : "";

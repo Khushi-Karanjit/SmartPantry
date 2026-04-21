@@ -218,7 +218,7 @@ export default function RecipeSuggester() {
                         onClick={() => navigate(`/recipes/${recipe._id}`)}
                       >
                         <div className="relative aspect-[16/10]">
-                          <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                           
                           <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full bg-white/90 shadow-md border border-slate-200 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5

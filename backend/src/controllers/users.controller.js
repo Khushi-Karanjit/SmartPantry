@@ -43,14 +43,6 @@ async function getProfile(req, res, next) {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find most stored ingredient
-    const mostStoredIngAgg = await PantryItem.aggregate([
-      { $match: { userId: user._id } },
-      { $group: { _id: "$ingredientId", name: { $first: "$name" }, count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 1 }
-    ]);
-
     res.json({
       profile: {
         ...user,
@@ -58,7 +50,6 @@ async function getProfile(req, res, next) {
       },
       stats: {
         totalPantryItems: pantryCount,
-        mostStoredIngredient: mostStoredIngAgg[0]?.name || "None",
         totalCooked: await CookingLog.countDocuments({ userId: req.userId })
       },
       recentLogs,

@@ -85,7 +85,6 @@ async function initializePantry(req, res) {
             name: normalizedName,
             category: catName,
             defaultUnit: it.unit || "pcs",
-            shelfLifeDays: 0,
             keywords: [],
             isCustom: false,
           },
@@ -158,7 +157,9 @@ async function getPantryItems(req, res) {
     const mappedAll = allItems.map(it => {
       const cat = it.categoryId || {};
       const ingredient = it.ingredientId || {};
-      const shelfLife = ingredient.shelfLifeDays || cat.shelfLifeDays || 30;
+      const shelfLife = (ingredient.shelfLifeDays || ingredient.shelfLifeDays === 0) 
+        ? ingredient.shelfLifeDays 
+        : (cat.shelfLifeDays || 30);
       const base = it.addedAt || it.createdAt || new Date();
       return { _id: it._id, expiryDate: computeExpiryIso(base, shelfLife) };
     });
@@ -191,7 +192,9 @@ async function getPantryItems(req, res) {
     const mapped = matchedItems.map((it) => {
       const cat = it.categoryId || {};
       const ingredient = it.ingredientId || {};
-      const shelfLife = ingredient.shelfLifeDays || cat.shelfLifeDays || 30;
+      const shelfLife = (ingredient.shelfLifeDays || ingredient.shelfLifeDays === 0) 
+        ? ingredient.shelfLifeDays 
+        : (cat.shelfLifeDays || 30);
       const base = it.addedAt || it.createdAt || new Date();
       return {
         ...it,
@@ -261,7 +264,9 @@ async function addPantryItem(req, res) {
 
     if (existingItem) {
       const cat = existingItem.categoryId || {};
-      const shelfLife = ingredient.shelfLifeDays || cat.shelfLifeDays || 30;
+      const shelfLife = (ingredient.shelfLifeDays || ingredient.shelfLifeDays === 0) 
+        ? ingredient.shelfLifeDays 
+        : (cat.shelfLifeDays || 30);
       const base = existingItem.addedAt || existingItem.createdAt || new Date();
       const expiryDate = computeExpiryIso(base, shelfLife);
       const d = daysUntil(expiryDate);
@@ -371,7 +376,9 @@ async function cleanupExpiredItems(req, res) {
     const expiredIds = items.filter(it => {
       const cat = it.categoryId || {};
       const ing = it.ingredientId || {};
-      const shelfLife = ing.shelfLifeDays || cat.shelfLifeDays || 30;
+      const shelfLife = (ing.shelfLifeDays || ing.shelfLifeDays === 0) 
+        ? ing.shelfLifeDays 
+        : (cat.shelfLifeDays || 30);
       const base = it.addedAt || it.createdAt || new Date();
       const d = daysUntil(computeExpiryIso(base, shelfLife));
       return d <= 0;
@@ -402,7 +409,9 @@ async function restockPantryItem(req, res) {
 
     const cat = existingItem.categoryId || {};
     const ing = existingItem.ingredientId || {};
-    const shelfLife = ing.shelfLifeDays || cat.shelfLifeDays || 30;
+    const shelfLife = (ing.shelfLifeDays || ing.shelfLifeDays === 0) 
+      ? ing.shelfLifeDays 
+      : (cat.shelfLifeDays || 30);
     const base = existingItem.addedAt || existingItem.createdAt || new Date();
     const expiryDate = computeExpiryIso(base, shelfLife);
     const d = daysUntil(expiryDate);

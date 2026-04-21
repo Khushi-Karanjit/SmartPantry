@@ -5,7 +5,7 @@ const ingredientSchema = new mongoose.Schema(
     name: { type: String, required: true, uppercase: true, trim: true, unique: true, index: true },
     category: { type: String, required: true, index: true },
     defaultUnit: { type: String, default: 'g' },
-    shelfLifeDays: { type: Number, default: 0, min: 0 },
+    shelfLifeDays: { type: Number, min: 0 },
     
     // Nutritional density: Density values per 1g (mass/volume) OR per 1 unit (discrete)
     // Calories are dynamically derived via the 4-4-9 Rule: (P*4 + C*4 + F*9)

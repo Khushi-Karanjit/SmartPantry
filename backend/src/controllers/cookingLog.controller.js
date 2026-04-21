@@ -40,12 +40,15 @@ exports.createLog = async (req, res) => {
     await newLog.save({ session });
 
     // 2. Deduct from Pantry
+    const { standardizeForDeduction } = require("../services/unit.service");
+    const Ingredient = require("../models/Ingredient");
+
     for (const ing of recipe.ingredients) {
       if (!ing.ingredientId) continue;
 
-      const rawNeededQty = (ing.quantity || 0) * (servings / (recipe.servings || 1));
-      const { quantity: neededQty } = normalizeCulinaryUnit(ing.name, ing.unit, rawNeededQty);
-      
+      const ingredientDoc = await Ingredient.findById(ing.ingredientId).lean();
+      const categoryName = ingredientDoc ? ingredientDoc.category : "Other";
+
       // Find the pantry item for this ingredient
       const pantryItem = await PantryItem.findOne({ 
         userId, 
@@ -53,11 +56,20 @@ exports.createLog = async (req, res) => {
       }).session(session);
 
       if (pantryItem) {
-        const remainingQty = pantryItem.quantity - neededQty;
+        // Calculate standardized deduction amount (e.g. 1 tbsp sugar -> 15g)
+        const rawNeededQty = (ing.quantity || 0) * (servings / (recipe.servings || 1));
+        const finalDeductionQty = standardizeForDeduction(
+          rawNeededQty, 
+          ing.unit, 
+          pantryItem.unit, 
+          categoryName
+        );
+
+        const remainingQty = pantryItem.quantity - finalDeductionQty;
         if (remainingQty <= 0) {
           await PantryItem.deleteOne({ _id: pantryItem._id }).session(session);
         } else {
-          pantryItem.quantity = remainingQty;
+          pantryItem.quantity = Math.round(remainingQty * 100) / 100; // Round to 2 decimal places
           await pantryItem.save({ session });
         }
       }

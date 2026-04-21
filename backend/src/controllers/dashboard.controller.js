@@ -58,10 +58,11 @@ exports.getDashboardSummary = async (req, res) => {
       {
         $addFields: {
           shelfLifeDays: {
-            $ifNull: [
-              "$ingredient.shelfLifeDays",
-              { $ifNull: ["$category.shelfLifeDays", 30] },
-            ],
+            $cond: {
+              if: { $gt: ["$ingredient.shelfLifeDays", 0] },
+              then: "$ingredient.shelfLifeDays",
+              else: { $ifNull: ["$category.shelfLifeDays", 30] }
+            }
           },
         },
       },

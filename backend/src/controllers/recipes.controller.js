@@ -38,10 +38,10 @@ async function listRecipes(req, res, next) {
       matchQuery.name = { $regex: search, $options: "i" };
     }
     if (cuisine) {
-      matchQuery.cuisine = cuisine;
+      matchQuery.cuisine = { $regex: `^${cuisine}$`, $options: "i" };
     }
     if (diet) {
-      matchQuery.diet = diet;
+      matchQuery.diet = { $regex: diet, $options: "i" };
     }
     
     // Video Filter
@@ -337,11 +337,8 @@ async function processVideo(req, res, next) {
     // USER OVERRIDE: Enforce strict Sugar sizing
     parsedIngredients.forEach(ing => {
        if (ing.name.toLowerCase().includes("sugar")) {
-          if (ing.quantity < 10) {
-             ing.unit = "tsp";
-          } else {
-             ing.unit = "gram";
-          }
+          // Both large and small quantities of sugar belong as 'g' in our uniform DB schema
+          ing.unit = "g";
        }
     });
     

@@ -135,7 +135,7 @@ async function generatePlan(req, res, next) {
     const pantryItems = await PantryItem.find({ userId: req.userId }).populate("ingredientId").lean();
     const pantryMap = buildPantryMap(pantryItems);
 
-    const allRecipes = await Recipe.find({ status: "published" }).lean();
+const allRecipes = await Recipe.find({ status: "published", calories: { $gt: 0 } }).lean();
     const filtered = allRecipes.filter((r) => recipeMatchesPreferences(r, prefs));
 
     if (!filtered.length) {
@@ -198,8 +198,12 @@ async function generatePlan(req, res, next) {
             chosen = candidates.find((item) => !dayMealsIds.has(item.recipe._id.toString()));
           }
 
-          // Tier 3: absolute fallback
-          if (!chosen) chosen = candidates[0];
+          // Tier 3: absolute fallback - must STILL be unique for the day
+          if (!chosen) {
+            chosen = candidates.find((item) => !dayMealsIds.has(item.recipe._id.toString()));
+          }
+
+          if (!chosen) chosen = candidates[0]; // Absolute last resort (only if library <= mealsPerDay)
 
           const rId = chosen.recipe._id.toString();
           currentUsage.set(rId, (currentUsage.get(rId) || 0) + 1);
@@ -209,8 +213,9 @@ async function generatePlan(req, res, next) {
           
           // PORTION SCALING: Calculate required servings to hit currentTarget
           let sCount = 1;
-          if (calPerS > 0 && calPerS < currentTarget * 0.8) {
-             sCount = Math.min(2, Math.round(currentTarget / calPerS)); 
+          if (calPerS > 0 && calPerS < currentTarget * 0.9) {
+             // More aggressive scaling (up to 3x) to reach target if recipe is small
+             sCount = Math.min(3, Math.round(currentTarget / calPerS)); 
           }
 
           remainingCal -= calPerS * sCount;
@@ -228,6 +233,7 @@ async function generatePlan(req, res, next) {
             }).sort((a, b) => b.score - a.score);
 
             if (snacks.length) {
+                // Snack must also be unique for the day
                 const snack = snacks.find(s => !dayMealsIds.has(s.recipe._id.toString()));
                 if (snack) {
                     const rId = snack.recipe._id.toString();

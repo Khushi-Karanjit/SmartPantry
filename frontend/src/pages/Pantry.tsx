@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -673,234 +674,240 @@ export default function Pantry() {
         )}
 
         {/* RESTOCK QUANTITY MODAL */}
-        <AnimatePresence>
-          {restockModal?.open && (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
-              onClick={() => setRestockModal(null)}
-            >
+        {createPortal(
+          <AnimatePresence>
+            {restockModal?.open && (
               <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
+                onClick={() => setRestockModal(null)}
               >
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold tracking-tight text-slate-900 capitalize">{restockModal.name.toLowerCase()}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Restock Item</p>
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                  className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight text-slate-900 capitalize">{restockModal.name.toLowerCase()}</h3>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Restock Item</p>
+                    </div>
+                    <button onClick={() => setRestockModal(null)} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all">
+                      <X size={18} />
+                    </button>
                   </div>
-                  <button onClick={() => setRestockModal(null)} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all">
-                    <X size={18} />
-                  </button>
-                </div>
 
-                {/* Current stock info */}
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 flex justify-between items-center">
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Stock</p>
-                    <p className="text-2xl font-bold text-slate-800">{restockModal.currentQty} <span className="text-sm font-medium text-slate-400">{restockModal.unit}</span></p>
+                  {/* Current stock info */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 flex justify-between items-center">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Stock</p>
+                      <p className="text-2xl font-bold text-slate-800">{restockModal.currentQty} <span className="text-sm font-medium text-slate-400">{restockModal.unit}</span></p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">After Restock</p>
+                      <p className="text-2xl font-bold text-green-600">{restockModal.currentQty + restockQty} <span className="text-sm font-medium text-slate-400">{restockModal.unit}</span></p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">After Restock</p>
-                    <p className="text-2xl font-bold text-green-600">{restockModal.currentQty + restockQty} <span className="text-sm font-medium text-slate-400">{restockModal.unit}</span></p>
+
+                  <div className="space-y-2 mb-6">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity to Add</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={restockQty}
+                      onChange={(e) => setRestockQty(Math.max(1, Number(e.target.value)))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 text-center text-xl font-bold focus:outline-none focus:border-green-400 focus:ring-4 focus:ring-green-50 transition-all"
+                      autoFocus
+                    />
                   </div>
-                </div>
 
-                <div className="space-y-2 mb-6">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity to Add</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={restockQty}
-                    onChange={(e) => setRestockQty(Math.max(1, Number(e.target.value)))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 text-center text-xl font-bold focus:outline-none focus:border-green-400 focus:ring-4 focus:ring-green-50 transition-all"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => setRestockModal(null)}>Cancel</button>
-                  <button
-                    className="flex-1 py-4 rounded-2xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200 disabled:opacity-50"
-                    onClick={confirmRestock}
-                    disabled={saving}
-                  >
-                    {saving ? "Saving..." : `Add ${restockQty} ${restockModal.unit}`}
-                  </button>
-                </div>
+                  <div className="flex gap-3">
+                    <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => setRestockModal(null)}>Cancel</button>
+                    <button
+                      className="flex-1 py-4 rounded-2xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200 disabled:opacity-50"
+                      onClick={confirmRestock}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : `Add ${restockQty} ${restockModal.unit}`}
+                    </button>
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
 
         {/* HIGH-TECH MODALS */}
-        <AnimatePresence>
-          {(openAdd || openEdit) && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
-              onClick={() => { setOpenAdd(false); setOpenEdit(false); setAddCart([]); }}
-            >
+        {createPortal(
+          <AnimatePresence>
+            {(openAdd || openEdit) && (
               <motion.div 
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl relative flex flex-col max-h-[90vh]"
-                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
+                onClick={() => { setOpenAdd(false); setOpenEdit(false); setAddCart([]); }}
               >
-                {/* HEADER */}
-                <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                  <div>
-                    <h3 className="text-2xl font-bold tracking-tight text-slate-900">
-                      {openAdd ? "Add Items" : "Edit Item"}
-                    </h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Kitchen Manager</p>
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                  className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl relative flex flex-col max-h-[90vh]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* HEADER */}
+                  <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                    <div>
+                      <h3 className="text-2xl font-bold tracking-tight text-slate-900">
+                        {openAdd ? "Add Items" : "Edit Item"}
+                      </h3>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Kitchen Manager</p>
+                    </div>
+                    <button onClick={() => { setOpenAdd(false); setOpenEdit(false); setAddCart([]); }} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all">
+                      <X size={20} />
+                    </button>
                   </div>
-                  <button onClick={() => { setOpenAdd(false); setOpenEdit(false); setAddCart([]); }} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all">
-                    <X size={20} />
-                  </button>
-                </div>
 
-                {openAdd ? (
-                  /* ── MULTI-ITEM ADD CART ── */
-                  <>
-                    {/* Search */}
-                    <div className="flex-shrink-0 space-y-1 mb-4">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Search & Add Ingredients</p>
-                      <IngredientSearchSelect
-                        category=""
-                        value={null}
-                        onChange={(ingredient) => { if (ingredient) addToCart(ingredient); }}
-                      />
-                    </div>
-
-                    {/* Cart list */}
-                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-[60px] mb-4">
-                      {addCart.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                          <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No items yet</p>
-                          <p className="text-[11px] text-slate-300 mt-1">Search above to add ingredients</p>
-                        </div>
-                      ) : (
-                        addCart.map((cartItem, idx) => (
-                          <div key={cartItem.ingredient._id} className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-slate-800 capitalize truncate">{cartItem.ingredient.name}</p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{cartItem.ingredient.category}</p>
-                            </div>
-                            <input
-                              type="number"
-                              min={1}
-                              value={cartItem.quantity}
-                              onChange={(e) => updateCartItem(idx, "quantity", Number(e.target.value))}
-                              className="w-16 text-center bg-white border border-slate-200 rounded-xl py-2 px-2 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
-                            />
-                            <select
-                              value={cartItem.unit}
-                              onChange={(e) => updateCartItem(idx, "unit", e.target.value)}
-                              className="w-20 bg-white border border-slate-200 rounded-xl py-2 px-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 appearance-none cursor-pointer"
-                            >
-                              {PANTRY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => removeFromCart(idx)}
-                              className="w-8 h-8 flex items-center justify-center rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-all flex-shrink-0"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex gap-4 flex-shrink-0">
-                      <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => { setOpenAdd(false); setAddCart([]); }}>Cancel</button>
-                      <button
-                        className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200"
-                        onClick={addAllItems}
-                        disabled={saving || addCart.length === 0}
-                      >
-                        {saving ? "Saving..." : `Add ${addCart.length > 0 ? addCart.length + " " : ""}Item${addCart.length !== 1 ? "s" : ""}`}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  /* ── SINGLE ITEM EDIT ── */
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Category</label>
-                      <div className="relative group">
-                        <select
-                          value={editForm.category}
-                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value, ingredient: null, unit: "" })}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 appearance-none focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
-                        >
-                          {categories.map((c) => (
-                            <option key={c._id} value={c.name} className="bg-white">{c.name}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Food Name</label>
-                      <IngredientSearchSelect
-                        category={editForm.category}
-                        value={editForm.ingredient}
-                        onChange={(ingredient) =>
-                          setEditForm((p) => ({
-                            ...p,
-                            ingredient,
-                            category: ingredient ? ingredient.category : p.category,
-                            unit: ingredient ? ingredient.defaultUnit || p.unit : ""
-                          }))
-                        }
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={editForm.quantity}
-                          onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
+                  {openAdd ? (
+                    /* ── MULTI-ITEM ADD CART ── */
+                    <>
+                      {/* Search */}
+                      <div className="flex-shrink-0 space-y-1 mb-4">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Search & Add Ingredients</p>
+                        <IngredientSearchSelect
+                          category=""
+                          value={null}
+                          onChange={(ingredient) => { if (ingredient) addToCart(ingredient); }}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Unit</label>
-                        <select
-                          value={editForm.unit}
-                          onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer"
+
+                      {/* Cart list */}
+                      <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-[60px] mb-4">
+                        {addCart.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                            <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No items yet</p>
+                            <p className="text-[11px] text-slate-300 mt-1">Search above to add ingredients</p>
+                          </div>
+                        ) : (
+                          addCart.map((cartItem, idx) => (
+                            <div key={cartItem.ingredient._id} className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-slate-800 capitalize truncate">{cartItem.ingredient.name}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{cartItem.ingredient.category}</p>
+                              </div>
+                              <input
+                                type="number"
+                                min={1}
+                                value={cartItem.quantity}
+                                onChange={(e) => updateCartItem(idx, "quantity", Number(e.target.value))}
+                                className="w-16 text-center bg-white border border-slate-200 rounded-xl py-2 px-2 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+                              />
+                              <select
+                                value={cartItem.unit}
+                                onChange={(e) => updateCartItem(idx, "unit", e.target.value)}
+                                className="w-20 bg-white border border-slate-200 rounded-xl py-2 px-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 appearance-none cursor-pointer"
+                              >
+                                {PANTRY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => removeFromCart(idx)}
+                                className="w-8 h-8 flex items-center justify-center rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-all flex-shrink-0"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex gap-4 flex-shrink-0">
+                        <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => { setOpenAdd(false); setAddCart([]); }}>Cancel</button>
+                        <button
+                          className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200"
+                          onClick={addAllItems}
+                          disabled={saving || addCart.length === 0}
                         >
-                          {PANTRY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                        </select>
+                          {saving ? "Saving..." : `Add ${addCart.length > 0 ? addCart.length + " " : ""}Item${addCart.length !== 1 ? "s" : ""}`}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    /* ── SINGLE ITEM EDIT ── */
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Category</label>
+                        <div className="relative group">
+                          <select
+                            value={editForm.category}
+                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value, ingredient: null, unit: "" })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 appearance-none focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
+                          >
+                            {categories.map((c) => (
+                              <option key={c._id} value={c.name} className="bg-white">{c.name}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Food Name</label>
+                        <IngredientSearchSelect
+                          category={editForm.category}
+                          value={editForm.ingredient}
+                          onChange={(ingredient) =>
+                            setEditForm((p) => ({
+                              ...p,
+                              ingredient,
+                              category: ingredient ? ingredient.category : p.category,
+                              unit: ingredient ? ingredient.defaultUnit || p.unit : ""
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Quantity</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={editForm.quantity}
+                            onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Unit</label>
+                          <select
+                            value={editForm.unit}
+                            onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all font-bold appearance-none cursor-pointer"
+                          >
+                            {PANTRY_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 pt-4">
+                        <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => setOpenEdit(false)}>Cancel</button>
+                        <button className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200" onClick={saveEdit} disabled={saving}>
+                          {saving ? "Saving..." : "Save Changes"}
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex gap-4 pt-4">
-                      <button className="flex-1 btn-ghost-futuristic text-sm py-4" onClick={() => setOpenEdit(false)}>Cancel</button>
-                      <button className="flex-1 btn-futuristic text-sm py-4 shadow-blue-200" onClick={saveEdit} disabled={saving}>
-                        {saving ? "Saving..." : "Save Changes"}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
       </div>
     </DashboardLayout>
   );

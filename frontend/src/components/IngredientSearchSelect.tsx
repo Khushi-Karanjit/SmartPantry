@@ -43,6 +43,12 @@ export default function IngredientSearchSelect({
       return;
     }
 
+    // Do not search/auto-open if the query is just reflecting the currently selected item
+    if (value && query === value.name) {
+      setOpen(false);
+      return;
+    }
+
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
@@ -57,7 +63,7 @@ export default function IngredientSearchSelect({
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [query, category]);
+  }, [query, category, value]);
 
   const selectIngredient = (ing: Ingredient) => {
     setQuery(""); // Clear so user can search next item; Edit modal name shown via value sync
@@ -85,7 +91,11 @@ export default function IngredientSearchSelect({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search ingredients..."
-          onFocus={() => query.length >= 2 && setOpen(true)}
+          onFocus={() => {
+            if (query.length >= 2 && (!value || query !== value.name)) {
+              setOpen(true);
+            }
+          }}
           className="w-full bg-[#FAFDFF] border border-slate-200 rounded-2xl py-4 pl-12 pr-12 text-sm font-semibold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all shadow-sm"
         />
 

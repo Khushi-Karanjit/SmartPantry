@@ -77,7 +77,7 @@ export default function Recipes() {
       }
     })();
     return () => { active = false; };
-  }, [page, search, selectedCuisine, hasVideo]);
+  }, [page, search, selectedCuisine, selectedDiet, hasVideo]);
 
   useEffect(() => {
     setPage(1);
@@ -187,7 +187,10 @@ export default function Recipes() {
                   <option value="" className="bg-white">All Diets</option>
                   <option value="Vegetarian" className="bg-white">Vegetarian</option>
                   <option value="Vegan" className="bg-white">Vegan</option>
-                  <option value="Keto" className="bg-white">Keto</option>
+                  <option value="High Protein" className="bg-white">High Protein</option>
+                  <option value="Low Carb" className="bg-white">Low Carb</option>
+                  <option value="Gluten Free" className="bg-white">Gluten Free</option>
+                  <option value="Balanced" className="bg-white">Balanced</option>
                 </select>
                 <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-slate-900 transition-colors" />
              </div>
@@ -229,10 +232,10 @@ export default function Recipes() {
                   onClick={() => setPreviewId(recipe._id)}
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
-                    <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={recipe.imageUrl || "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800"} alt={recipe.name} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     
-                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
                         <div className="px-3 py-1 bg-white/90 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-full shadow-md backdrop-blur-sm">
                         {recipe.match}% Matches
                         </div>
@@ -349,7 +352,7 @@ export default function Recipes() {
                       </div>
 
                       <div className="relative aspect-video rounded-3xl overflow-hidden border border-slate-200 shadow-xl">
-                        <img src={previewRecipe.imageUrl || ""} className="w-full h-full object-cover" alt="" />
+                        <img src={previewRecipe.imageUrl || ""} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
                            <div className="flex items-center gap-2">

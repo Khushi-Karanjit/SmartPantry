@@ -1,0 +1,34 @@
+=============================================================================
+SMARTPANTRY CORE SYSTEM TEST WORKFLOWS
+=============================================================================
+Project: SmartPantry (Intelligent Inventory & Meal Planning)
+Student ID: 210273
+=============================================================================
+
+ST-1: Testing User Registration, Secure Login, and Initial Dashboard Access.
+- Workflow: User Signs up -> Validates Email -> Logs in -> Views personalized Dashboard.
+
+ST-2: Testing Initial Kitchen Calibration via "Elite Starter Kits".
+- Workflow: User selects a professional kit (e.g. Himalayan or Italian) -> Modifies item list -> Initializes Pantry in bulk.
+
+ST-3: Testing Real-time Inventory Management and Smart Restocking.
+- Workflow: User adds a single item -> Edits quantity -> Restocks an expired item -> Verifies that old stock is discarded automatically.
+
+ST-4: Testing AI-Driven Recipe Discovery and Ingredient Matching.
+- Workflow: User navigates to Recipe Suggester -> System calculates matches based on pantry -> User views suggestions tailored to stock.
+
+ST-5: Testing Precision Cooking Workflow and Automatic Inventory Deduction.
+- Workflow: User selects a recipe -> Clicks "Mark as Cooked" -> System deducts required quantities from Pantry and updates Analytics.
+
+ST-6: Testing Goal-Oriented Meal Planning with Caloric Target Adherence.
+- Workflow: User sets a daily calorie target (e.g. 2000 kcal) -> Generates AI Meal Plan -> Verifies that total calories stay within ±10% tolerance.
+
+ST-7: Testing Automated Shopping List Generation and Consolidation.
+- Workflow: User creates a meal plan -> navigates to Shopping List -> Verifies that missing ingredients are aggregated and deduplicated for purchase.
+
+ST-8: Testing Admin Oversight and Platform-Wide Analytical Tracking.
+- Workflow: System Administrator logs in -> Accesses Admin Panel -> Verifies User Growth and Platform-wide ingredient metrics.
+
+=============================================================================
+END OF CORE SYSTEM WORKFLOWS
+=============================================================================

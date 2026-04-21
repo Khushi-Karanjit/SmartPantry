@@ -353,8 +353,7 @@ export default function Profile() {
                  <div className="grid grid-cols-1 gap-4">
                     {[
                       { l: "Kitchen Items", v: data?.stats.totalPantryItems, i: <Refrigerator size={24} />, c: "text-blue-600", bg: "bg-blue-50" },
-                      { l: "Recipes Cooked", v: data?.stats.totalCooked, i: <ChefHat size={24} />, c: "text-emerald-600", bg: "bg-emerald-50" },
-                      { l: "Top Ingredient", v: data?.stats.mostStoredIngredient, i: <Utensils size={24} />, c: "text-amber-600", bg: "bg-amber-50" }
+                      { l: "Recipes Cooked", v: data?.stats.totalCooked, i: <ChefHat size={24} />, c: "text-emerald-600", bg: "bg-emerald-50" }
                     ].map(s => (
                       <div key={s.l} className="bg-[#FAFDFF] border border-slate-200 rounded-3xl p-6 flex items-center gap-6 shadow-md group hover:border-blue-200 transition-colors">
                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${s.bg} ${s.c} group-hover:scale-105 transition-transform`}>

@@ -5,20 +5,24 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "jest --verbose smartpantry.test.js"
+    "test": "jest --verbose smartpantry.test.js",
+    "test:system": "jest --verbose smartpantry.system.test.js --testTimeout=30000 --forceExit"
   },
   "jest": {
     "testEnvironment": "node",
     "testTimeout": 15000,
     "reporters": [
       "default",
-      ["jest-html-reporter", {
-        "pageTitle": "SmartPantry — Unit Test Results",
-        "outputPath": "./test-report.html",
-        "includeFailureMsg": true,
-        "includeConsoleLog": false,
-        "theme": "lightTheme"
-      }]
+      [
+        "jest-html-reporter",
+        {
+          "pageTitle": "SmartPantry — Unit Test Results",
+          "outputPath": "./test-report.html",
+          "includeFailureMsg": true,
+          "includeConsoleLog": false,
+          "theme": "lightTheme"
+        }
+      ]
     ]
   },
   "keywords": [],
@@ -44,6 +48,7 @@
   "devDependencies": {
     "jest": "^30.3.0",
     "jest-html-reporter": "^4.4.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "supertest": "^7.2.2"
   }
 }

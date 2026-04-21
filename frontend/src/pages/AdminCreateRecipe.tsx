@@ -144,7 +144,7 @@ export default function AdminCreateRecipe() {
                 let cleanedIngredients = Array.from(dedupMap.values());
                 cleanedIngredients.forEach((ing: any) => {
                     if (ing.name.toLowerCase().includes("sugar")) {
-                        ing.unit = ing.quantity < 10 ? "tsp" : "gram";
+                        ing.unit = "g"; // Use strictly valid enum 'g'
                     }
                 });
 
@@ -266,8 +266,6 @@ export default function AdminCreateRecipe() {
 
             setRecipe(prev => ({
                 ...prev,
-                name: sug.name || prev.name,
-                description: sug.description || prev.description,
                 cuisine: sug.cuisine || prev.cuisine,
                 diet: sug.diet || prev.diet,
                 prepMinutes: sug.prepMinutes || prev.prepMinutes,
@@ -405,6 +403,7 @@ export default function AdminCreateRecipe() {
                                             <img 
                                                 src={recipe.imageUrl} 
                                                 alt="Preview" 
+                                                referrerPolicy="no-referrer"
                                                 className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700"
                                                 onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400?text=Invalid+Image+URL'; }} 
                                             />

@@ -38,14 +38,10 @@ exports.getAdminStats = async (req, res) => {
     ]);
     const mostCookedRecipe = mostCookedAgg[0]?.recipe?.name || "N/A";
 
-    // Most used ingredient
-    const mostUsedIngAgg = await CookingLog.aggregate([
-      { $unwind: "$ingredientsUsed" },
-      { $group: { _id: "$ingredientsUsed.ingredientId", name: { $first: "$ingredientsUsed.name" }, count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 1 }
-    ]);
-    const mostUsedIngredient = mostUsedIngAgg[0]?.name || "N/A";
+    // User Growth (New in last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const newUsersCount = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
 
     res.json({
       stats: {
@@ -59,7 +55,7 @@ exports.getAdminStats = async (req, res) => {
         totalCookingActivities,
         reviewQueue: draftRecipes,
         mostCookedRecipe,
-        mostUsedIngredient
+        newUsersCount
       }
     });
   } catch (err) {
@@ -166,15 +162,7 @@ exports.getAdminAnalytics = async (req, res) => {
       { $project: { name: "$recipe.name", count: 1 } }
     ]);
 
-    // Ingredient usage
-    const ingredientStats = await CookingLog.aggregate([
-      { $unwind: "$ingredientsUsed" },
-      { $group: { _id: "$ingredientsUsed.ingredientId", name: { $first: "$ingredientsUsed.name" }, count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 }
-    ]);
-
-    res.json({ mostCooked, ingredientStats });
+    res.json({ mostCooked });
   } catch (err) {
     res.status(500).json({ message: err.message || "Failed to fetch analytics" });
   }

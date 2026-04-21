@@ -206,7 +206,7 @@ export default function AdminManageRecipes() {
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
-                                                <img src={recipe.imageUrl || "https://placehold.co/100x100?text=NA"} className="w-full h-full object-cover" />
+                                                <img src={recipe.imageUrl || "https://placehold.co/100x100?text=NA"} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-bold text-slate-900 truncate max-w-[200px]">{recipe.name}</p>

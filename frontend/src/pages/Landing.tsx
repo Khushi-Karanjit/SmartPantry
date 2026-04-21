@@ -1,9 +1,16 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ChevronRight, Zap, Target, CheckCircle } from "lucide-react";
+import { clearAuth } from "../auth/auth";
 
 export default function Landing() {
   const { scrollY } = useScroll();
+
+  useEffect(() => {
+    // Navigating to landing page counts as logout
+    clearAuth();
+  }, []);
   
   // Create a buttery smooth spring on the scroll position
   const smoothScrollY = useSpring(scrollY, {

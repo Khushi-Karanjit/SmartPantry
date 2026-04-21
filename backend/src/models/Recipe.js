@@ -4,7 +4,7 @@ const ingredientSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     quantity: { type: Number, default: 1, min: 0 },
-    unit: { type: String, default: "" },
+    unit: { type: String, default: "g" },
     ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "Ingredient", required: true },
   },
   { _id: false }

@@ -32,8 +32,8 @@ import {
 } from "../api/api";
 
 function statusClass(status: string) {
-  if (status === "published") return "bg-green-50 text-green-700 border-green-200";
-  if (status === "draft") return "bg-yellow-50 text-yellow-700 border-yellow-200";
+  if (status === "published") return "bg-blue-50 text-blue-700 border-blue-100";
+  if (status === "draft") return "bg-slate-50 text-slate-500 border-slate-200";
   return "bg-slate-100 text-slate-700 border-slate-200";
 }
 
@@ -141,9 +141,9 @@ export default function Admin() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5 w-full min-w-0">
            {[
              { l: "TOTAL RECIPES", v: stats?.totalRecipes, s: `${stats?.publishedRecipes} Published`, i: <BookOpen size={20} />, c: "text-blue-600", bg: "bg-blue-50" },
-             { l: "TOTAL USERS", v: stats?.totalUsers, s: "Active Community", i: <Users size={20} />, c: "text-amber-600", bg: "bg-amber-50" },
-             { l: "PANTRY ITEMS", v: stats?.totalPantryItems, s: "Tracked Ingredients", i: <Refrigerator size={20} />, c: "text-green-600", bg: "bg-green-50" },
-             { l: "COOKING ACTIVITY", v: stats?.totalCookingActivities, s: "Meals Cooked", i: <Zap size={20} />, c: "text-red-600", bg: "bg-red-50" }
+             { l: "TOTAL USERS", v: stats?.totalUsers, s: "Active Community", i: <Users size={20} />, c: "text-indigo-600", bg: "bg-indigo-50" },
+             { l: "PANTRY ITEMS", v: stats?.totalPantryItems, s: "Tracked Ingredients", i: <Refrigerator size={20} />, c: "text-slate-600", bg: "bg-slate-50" },
+             { l: "COOKING ACTIVITY", v: stats?.totalCookingActivities, s: "Meals Cooked", i: <Zap size={20} />, c: "text-blue-500", bg: "bg-slate-50" }
            ].map(s => (
              <motion.div key={s.l} variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 min-w-0 flex flex-col justify-between">
                 <div className="flex items-center justify-between gap-3">
@@ -175,12 +175,13 @@ export default function Admin() {
            </motion.div>
            
            <motion.div variants={item} className="bg-[#FAFDFF] border border-slate-200 rounded-2xl p-5 flex items-center gap-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 min-w-0 w-full overflow-hidden">
-              <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0">
-                 <Utensils size={24} />
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-blue-600 shrink-0">
+                 <Users size={24} />
               </div>
               <div className="space-y-1 min-w-0 flex-1">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Top Ingredient</p>
-                 <h4 className="text-lg font-bold text-slate-900 truncate w-full">{stats?.mostUsedIngredient || "None Yet"}</h4>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">User Growth</p>
+                 <h4 className="text-lg font-bold text-slate-900 truncate w-full">{stats?.newUsersCount || 0} New Registrations</h4>
+                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last 7 days</p>
               </div>
            </motion.div>
         </div>
